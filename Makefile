@@ -1,9 +1,9 @@
 CFLAGS=-Wall -g3
 
-all: weno
+all: main
 
-weno: 
-	cc $(CFLAGS) main.c functions.c -o weno
+main: 
+	cc $(CFLAGS) main.c functions.c -lncurses -o main
 
 clean:
-	rm -rf weno
+	rm -rf main

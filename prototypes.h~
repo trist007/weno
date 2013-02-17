@@ -5,6 +5,7 @@
 //  Copyright (c) 2013 Tristan Gonzalez. All rights reserved.
 //	rgonzale@darkterminal.net
 //
+#include <ncurses.h>
 
 #define MAX_DATA 32
 #define MAX_ROWS 10
@@ -14,6 +15,8 @@ void die(const char *message);
 void Usage();
 
 void Shell_Usage();
+
+void Ncurses_Usage(int *maxx, int *maxy, int *halfx, int *halfy);
 
 struct Connection {
    FILE *fp;
@@ -45,7 +48,7 @@ struct Information {
 
 void DatabaseCreate(Connection *conn, int *size);
 
-struct Connection *DatabaseLoad(const char *filename, char *action);
+struct Connection *DatabaseLoad(const char *file, char *action);
 
 void DatabaseClose(Connection *conn);
 
@@ -53,7 +56,7 @@ void AddRecord(Connection *conn, int *index, const char *name, const char *phone
 
 void DeleteRecord(Connection *conn, int *index);
 
-void DatabaseWrite(Connection *conn, const char *filename);
+void DatabaseWrite(Connection *conn, const char *file);
 
 void DatabaseClose(Connection *conn);
 
@@ -69,6 +72,10 @@ void DatabaseExport(Connection *conn);
 
 void DatabaseSort(Connection *conn);
 
-void DatabaseShell(Connection *conn, const char *filename);
+void DatabaseShell(Connection *conn, const char *file);
 
-void ParseArguments(Connection *conn, const char *filename, char *args);
+void ParseArguments(Connection *conn, const char *file, char *args);
+
+void NcursesCenter(WINDOW *win, int row, const char *title);
+
+void DatabaseNcurses(Connection *conn, const char *file);

@@ -14,6 +14,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <curses.h>
+#include <ncurses.h>
 #include "prototypes.h"
 
 #define MAX_DATA 32
@@ -38,12 +40,13 @@ void Usage()
 			"-a add_record, <index> <name> <phone>, if index is omitted record "
 			"is added to next availabe index\n"
 			"-c create_database, <size> if omitted size of 10 is used\n"
-			"-d delete_record, <index>, if index is omitted last record is deleted\n"
+			"-d delete_record, <index>, if index is omitted last record is " 
+			"deleted\n"
 			"-e export\n"
 			"-f find, <name>\n"
 			"-h help, display usage\n"
-			"-i import, create database first then it will import from index 0 via "
-			"stdin\n"
+			"-i import, create database first then it will import from index "
+			"0 via stdin\n"
 			"-l list\n"
 			"-r resize <newsize>\n"
 			"-s sort\n"
@@ -57,12 +60,13 @@ void Shell_Usage()
 			"a add_record, <index> <name> <phone>, if index is omitted record "
 			"is added to next available index\n"
 			"c create_database, <size> if omitted size of 10 is used\n"
-			"d delete_record, <index>, if index is omitted last record is deleted\n"
+			"d delete_record, <index>, if index is omitted last record is " 
+			"deleted\n"
 			"e export\n"
 			"f find, <name>\n"
 			"h help, display usage\n"
-			"i import, create database first then it will import from index 0 via "
-			"stdin\n"
+			"i import, create database first then it will import from index "
+			"0 via stdin\n"
 			"l list\n"
 			"q quit, exit shell\n"
 			"r resize <newsize>\n"
@@ -464,7 +468,7 @@ void DatabaseSort(Connection *conn)
 
 	struct Information *rows = conn->core->db->rows;
 	int *delete_index = &(conn->core->cnf->delete_index);
-	
+
 	for (i = 0; i <= *delete_index; i++) {
 		if (rows[i].name[0] == 0)
 			break;
@@ -567,7 +571,189 @@ void DatabaseShell(Connection *conn, const char *file)
 	} while(strncmp(input, "quit", 1)); 
 }
 
+void NcursesCenter(WINDOW *win, int row, const char *title)
+{
+	int len, indent, y, width;
+
+	getmaxyx(win, y, width);
+
+	len = strlen(title);
+	indent = width - len;
+	indent /= 2;
+
+	mvwaddstr(win, row, indent, title);
+	refresh();
+}
+
 void DatabaseNcurses(Connection *conn, const char *file)
 {
-	fprintf(stderr, "Coming Soon to a Repository Near You\n");
+	int maxy, maxx, halfy, halfx;
+	int usage_y, usage_x, usage_maxy, usage_maxx;
+
+	WINDOW *title, *body, *console, *border_body, *border_console, *usage;
+
+	char input;
+
+	char banner[] = "weno shell v0.1 by Tristan Gonzalez - Copyright 2013";
+
+	char help[] = {" a - add_record, <index> <name> <phone>, if index is "
+				"omitted record is added to the next available index\n "
+				"c - create_database, <size> if omitted size of 10 is used\n "
+				"d - delete_record, <index>, if index is omitted last record "
+				"is deleted\n "
+				"e - export\n "
+				"f - find, <name>\n "
+				"i - import, create database first then it will import from "
+				"index 0 via stdin\n "
+				"l - list\n "
+				"q - quit, exit shell\n "
+				"r - resize <newsize>\n "
+				"s - sort"};
+
+	char *help_ptr = help;
+
+	void bomb(int r);
+
+	/*
+	   fprintf(stderr, "Initializing Ncurses");
+	   for (i = 0; i < 29; i++) {
+	   napms(80);
+	   fprintf(stderr, ".");
+	   }
+	   fprintf(stderr, "\nNcurses Engine Loaded\n");
+	   napms(1000);
+	 */
+
+	initscr();
+	start_color();
+	init_pair(1, COLOR_WHITE, COLOR_BLUE);
+	init_pair(2, COLOR_BLACK, COLOR_CYAN);
+	init_pair(3, COLOR_WHITE, COLOR_MAGENTA);
+	init_color(COLOR_WHITE, 500, 500, 500);
+	init_pair(4, COLOR_BLACK, COLOR_WHITE);
+	init_pair(5, COLOR_BLACK, COLOR_GREEN);
+	init_pair(6, COLOR_CYAN, COLOR_CYAN);
+	bkgd(COLOR_PAIR(2));
+	attron(A_REVERSE);
+
+	getmaxyx(stdscr, maxy, maxx);
+	halfx = maxx >> 1;
+	halfy = maxy >> 1;
+
+	mvaddstr(maxy - 2, maxx - 17, "Press ? for help");
+	refresh();
+
+	// title window
+	title = newwin(3 ,maxx - 2, 1, 1);
+	if (title == NULL) {
+		addstr("Unable to allocate memory for title window");
+		endwin();
+		exit(1);
+	}	
+
+	wbkgd(title, COLOR_PAIR(1));
+	box(title, '|', '=');
+	NcursesCenter(title, 1, banner);
+	wrefresh(title);
+
+	// body window
+	body = newwin((2 * maxy)/3, maxx - 2, 5, 1);
+	if (body == NULL) {
+		addstr("Unable to allocate memory for body window");
+		endwin();
+		exit(1);
+	}	
+
+	wbkgd(body, COLOR_PAIR(1));
+	box(body, '|', '=');
+	wrefresh(body);
+
+
+	// usage window
+	border_body = newwin((2 * maxy)/5, maxx/2, maxy/4, maxx/4);
+	if (border_body == NULL) {
+		addstr("Unable to allocate memory for border_body window");
+		endwin();
+		exit(1);
+	}		
+
+	wbkgd(border_body, COLOR_PAIR(3));
+	box(border_body, '|', '=');
+
+	usage = newwin((2 * maxy)/5 - 4, (maxx/2) - 4, (maxy/4) + 2, 
+			(maxx/4) + 2);
+	if (usage == NULL) {
+		addstr("Unable to allocate memory for usage window");
+		endwin();
+		exit(1);
+	}	
+	wbkgd(usage, COLOR_PAIR(3));
+	getmaxyx(usage, usage_maxy, usage_maxx);
+	while (*help_ptr) {
+		getyx(usage, usage_y, usage_x);
+		if (*help_ptr == ' ')
+			if (usage_maxx - usage_x < 5)
+				waddch(usage, '\n');
+		waddch(usage, *help_ptr);
+		help_ptr++;
+	}
+
+	// console window
+	border_console = newwin(5, maxx/3, maxy - 8, maxx/3);
+	if (border_console == NULL) {
+		addstr("Unable to allocate memory for border console window");
+		endwin();
+		exit(1);
+	}	
+	wbkgd(border_console, COLOR_PAIR(5));
+	//box(console, '*', '*');
+
+	console = newwin(3, (maxx/3) - 2, (maxy - 8 + 1), (maxx/3) + 1);
+	if (console == NULL) {
+		addstr("Unable to allocate memory for console window");
+		endwin();
+		exit(1);
+	}	
+	wbkgd(console, COLOR_PAIR(4));
+	box(console, '*', '*');
+
+	// user input
+	while ((input = getchar()) != 'q') {
+		switch(input) {
+			case '?':
+				touchwin(border_body);
+				wrefresh(border_body);
+				touchwin(usage);
+				wrefresh(usage);
+				getch();
+				touchwin(body);
+				wrefresh(body);
+				refresh();
+				break;
+
+			case 'c':
+				wmove(console, 1, 1);
+				wbkgd(border_console, COLOR_PAIR(5));
+				wbkgd(console, COLOR_PAIR(4));
+				touchwin(console);
+				wrefresh(console);
+				napms(100);
+				touchwin(border_console);
+				wrefresh(border_console);
+				touchwin(console);
+				wrefresh(console);
+				getch();
+				wbkgd(border_console, COLOR_PAIR(2));
+				wrefresh(border_console);
+				wbkgd(console, COLOR_PAIR(6));
+				wrefresh(console);
+				break;
+
+			default:
+				break;
+		}	
+	}
+
+	endwin();
+	printf("weno??\n");
 }
