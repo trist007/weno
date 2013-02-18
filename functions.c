@@ -587,37 +587,43 @@ void NcursesCenter(WINDOW *win, int row, const char *title)
 
 void DatabaseNcurses(Connection *conn, const char *file)
 {
+	int i;
 	int maxy, maxx, halfy, halfx;
 	int usage_y, usage_x, usage_maxy, usage_maxx;
 
-	WINDOW *title, *body, *console, *border_body, *border_console, *usage;
+	WINDOW *title, *border_body, *body, *border_console, *console, *border_usage, *usage;
 
-	char input;
+	char input, c;
+
+	char console_buf[MAX_DATA];
 
 	char banner[] = "weno shell v0.1 by Tristan Gonzalez - Copyright 2013";
 
 	char help[] = {" a - add_record, <index> <name> <phone>, if index is "
-				"omitted record is added to the next available index\n "
-				"c - create_database, <size> if omitted size of 10 is used\n "
-				"d - delete_record, <index>, if index is omitted last record "
-				"is deleted\n "
-				"e - export\n "
-				"f - find, <name>\n "
-				"i - import, create database first then it will import from "
-				"index 0 via stdin\n "
-				"l - list\n "
-				"q - quit, exit shell\n "
-				"r - resize <newsize>\n "
-				"s - sort"};
+		"omitted record is added to the next available index\n "
+			"c - create_database, <size> if omitted size of 10 is used\n "
+			"d - delete_record, <index>, if index is omitted last record "
+			"is deleted\n "
+			"e - export\n "
+			"f - find, <name>\n "
+			"i - import, create database first then it will import from "
+			"index 0 via stdin\n "
+			"l - list\n "
+			"q - quit, exit shell\n "
+			"r - resize <newsize>\n "
+			"s - sort"};
 
 	char *help_ptr = help;
 
-	void bomb(int r);
+	struct Information *rows = conn->core->db->rows;
+	int *size = &(conn->core->cnf->size);
+	int *free_index = &(conn->core->cnf->free_index);
+	int *delete_index = &(conn->core->cnf->delete_index);
 
 	/*
 	   fprintf(stderr, "Initializing Ncurses");
 	   for (i = 0; i < 29; i++) {
-	   napms(80);
+	   napms(40);
 	   fprintf(stderr, ".");
 	   }
 	   fprintf(stderr, "\nNcurses Engine Loaded\n");
@@ -634,7 +640,10 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	init_pair(5, COLOR_BLACK, COLOR_GREEN);
 	init_pair(6, COLOR_CYAN, COLOR_CYAN);
 	bkgd(COLOR_PAIR(2));
+
 	attron(A_REVERSE);
+	curs_set(0);
+	noecho();
 
 	getmaxyx(stdscr, maxy, maxx);
 	halfx = maxx >> 1;
@@ -657,7 +666,18 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	wrefresh(title);
 
 	// body window
-	body = newwin((2 * maxy)/3, maxx - 2, 5, 1);
+	border_body = newwin((2 * maxy)/3, maxx - 2, 5, 1);
+	if (border_body == NULL) {
+		addstr("Unable to allocate memory for border body window");
+		endwin();
+		exit(1);
+	}	
+
+	wbkgd(border_body, COLOR_PAIR(1));
+	box(border_body, '|', '=');
+	wrefresh(border_body);
+
+	body = newwin(((2 * maxy)/3) - 2, maxx - 4 , 6, 2);
 	if (body == NULL) {
 		addstr("Unable to allocate memory for body window");
 		endwin();
@@ -665,20 +685,19 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	}	
 
 	wbkgd(body, COLOR_PAIR(1));
-	box(body, '|', '=');
 	wrefresh(body);
 
 
 	// usage window
-	border_body = newwin((2 * maxy)/5, maxx/2, maxy/4, maxx/4);
-	if (border_body == NULL) {
-		addstr("Unable to allocate memory for border_body window");
+	border_usage = newwin((2 * maxy)/5, maxx/2, maxy/4, maxx/4);
+	if (border_usage == NULL) {
+		addstr("Unable to allocate memory for border usage window");
 		endwin();
 		exit(1);
 	}		
 
-	wbkgd(border_body, COLOR_PAIR(3));
-	box(border_body, '|', '=');
+	wbkgd(border_usage, COLOR_PAIR(3));
+	box(border_usage, '|', '=');
 
 	usage = newwin((2 * maxy)/5 - 4, (maxx/2) - 4, (maxy/4) + 2, 
 			(maxx/4) + 2);
@@ -706,7 +725,6 @@ void DatabaseNcurses(Connection *conn, const char *file)
 		exit(1);
 	}	
 	wbkgd(border_console, COLOR_PAIR(5));
-	//box(console, '*', '*');
 
 	console = newwin(3, (maxx/3) - 2, (maxy - 8 + 1), (maxx/3) + 1);
 	if (console == NULL) {
@@ -721,8 +739,8 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	while ((input = getchar()) != 'q') {
 		switch(input) {
 			case '?':
-				touchwin(border_body);
-				wrefresh(border_body);
+				touchwin(border_usage);
+				wrefresh(border_usage);
 				touchwin(usage);
 				wrefresh(usage);
 				getch();
@@ -733,20 +751,41 @@ void DatabaseNcurses(Connection *conn, const char *file)
 
 			case 'c':
 				wmove(console, 1, 1);
-				wbkgd(border_console, COLOR_PAIR(5));
-				wbkgd(console, COLOR_PAIR(4));
 				touchwin(console);
 				wrefresh(console);
 				napms(100);
+				wbkgd(border_console, COLOR_PAIR(5));
 				touchwin(border_console);
 				wrefresh(border_console);
 				touchwin(console);
 				wrefresh(console);
+				curs_set(1);
+				echo();
+
+				while((wgetch(console) != '\n')) {
+					wrefresh(console);
+				}
+				wclrtoeol(console);
+				wmove(console, 1, 1);
+				wrefresh(console);
+				wmove(console, 1, 1);
+				wrefresh(console);
+
+				wgetnstr(console, console_buf, MAX_DATA);
+				if (strncmp(console_buf, "list", 1)) {
+					wmove(body, 1, 1);
+					for (i = 0; i < *size; i++)
+						wprintw(body, "%d %s %s\n ", rows[i].index, rows[i].name, rows[i].phone);
+				}
+				wrefresh(body);
+				curs_set(0);
 				getch();
 				wbkgd(border_console, COLOR_PAIR(2));
 				wrefresh(border_console);
-				wbkgd(console, COLOR_PAIR(6));
+				touchwin(console);
 				wrefresh(console);
+				noecho();
+				curs_set(0);
 				break;
 
 			default:
