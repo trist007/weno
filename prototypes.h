@@ -5,6 +5,7 @@
 //  Copyright (c) 2013 Tristan Gonzalez. All rights reserved.
 //	rgonzale@darkterminal.net
 //
+
 #include <ncurses.h>
 
 #define MAX_DATA 32
@@ -74,6 +75,7 @@ void DatabaseShell(Connection *conn, const char *file);
 
 void ParseArguments(Connection *conn, const char *file, char *args);
 
-void NcursesCenter(WINDOW *win, int row, const char *title);
-
+// Ncurses prototypes
 void DatabaseNcurses(Connection *conn, const char *file);
+
+void NcursesCenter(WINDOW *win, int row, const char *title);
