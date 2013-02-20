@@ -59,13 +59,13 @@ void DatabaseWrite(Connection *conn, const char *file);
 
 void DatabaseClose(Connection *conn);
 
-void DatabaseList(Connection *conn);
+void DatabaseList(Connection *conn, WINDOW *win);
 
 void DatabaseResize(Connection *conn, int *newsize);
 
 void DatabaseImport(Connection *conn);
 
-void DatabaseFind(Connection *conn, char *name);
+void DatabaseFind(Connection *conn, char *name,	WINDOW *win);
 
 void DatabaseExport(Connection *conn);
 
@@ -79,3 +79,9 @@ void ParseArguments(Connection *conn, const char *file, char *args);
 void DatabaseNcurses(Connection *conn, const char *file);
 
 void NcursesCenter(WINDOW *win, int row, const char *title);
+
+void NcursesControl(Connection *conn, const char *file);
+
+void NcursesUsage();
+
+void NcursesConsole(Connection *conn, const char *file);

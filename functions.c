@@ -39,6 +39,7 @@ void Usage()
 			"-a add_record, <index> <name> <phone>, if index is omitted record "
 			"is added to next availabe index\n"
 			"-c create_database, <size> if omitted size of 10 is used\n"
+			"-C Ncurses interface\n"
 			"-d delete_record, <index>, if index is omitted last record is " 
 			"deleted\n"
 			"-e export\n"
@@ -118,13 +119,13 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 		members_read = fread(conn->core->cnf, 
 				sizeof(struct Config), 1, conn->fp);
-		fprintf(stderr, "%d Config members read\n", members_read); 
+		/* fprintf(stderr, "%d Config members read\n", members_read);  */
 
 		conn->core->db->rows = malloc((sizeof(struct Information)) 
 				* conn->core->cnf->size);
 		members_read = fread(conn->core->db->rows, 
 				sizeof(struct Information), conn->core->cnf->size, conn->fp);
-		fprintf(stderr, "%d Database members read\n", members_read); 
+		/* fprintf(stderr, "%d Database members read\n", members_read);  */
 	}
 
 	return conn;
@@ -173,10 +174,11 @@ void AddRecord(Connection *conn, int *index,
 		strncpy(rows[*free_index].name, name, MAX_DATA);
 		strncpy(rows[*free_index].phone, phone, MAX_DATA);
 
-		printf("%d %s %s\n", 
+		/* printf("%d %s %s\n",  
 				rows[*free_index].index, 
 				rows[*free_index].name, 
 				rows[*free_index].phone);
+				*/
 
 		if (*free_index == *delete_index) {
 			while (rows[*free_index].name[0]!= 0) {
@@ -200,9 +202,9 @@ void AddRecord(Connection *conn, int *index,
 		strncpy(rows[*index].name, name, MAX_DATA);
 		strncpy(rows[*index].phone, phone, MAX_DATA);
 
-		printf("%d %s %s\n", rows[*index].index, 
-				rows[*index].name, 
-				rows[*index].phone);
+		/*fprintf(stderr, "%d %s %s\n", rows[*index].index, 
+		  rows[*index].name, 
+		  rows[*index].phone);*/
 
 		if (*free_index == *index && *free_index == *delete_index) {
 			while (rows[*free_index].name[0] != 0) {
@@ -235,9 +237,9 @@ void DeleteRecord(Connection *conn, int *index)
 	int *delete_index = &(conn->core->cnf->delete_index);
 
 	if (index == NULL) {
-		fprintf(stderr, "delete_index %d\nfree_index %d\n", 
-				*delete_index, 
-				*free_index);
+		/* fprintf(stderr, "delete_index %d\nfree_index %d\n",
+		 *delete_index, 
+		 *free_index);*/
 
 		if (*free_index == 0) {
 			die("ERROR 240: database empty already");
@@ -278,9 +280,8 @@ void DeleteRecord(Connection *conn, int *index)
 		*free_index = 0;
 		while (rows[*free_index].name[0] != 0)
 			(*free_index)++;
-
-
 	}
+
 	if (*free_index > *delete_index) {
 		if ((*size) - (*free_index) >= 12) {
 			DatabaseResize(conn, &db_size);
@@ -298,11 +299,11 @@ void DatabaseWrite(Connection *conn, const char *file)
 
 	members_written = fwrite(conn->core->cnf, 
 			sizeof(struct Config), 1, conn->fp);
-	fprintf(stderr, "%d Config items written\n", members_written);
+	/* fprintf(stderr, "%d Config items written\n", members_written); */
 
 	members_written = fwrite(conn->core->db->rows, 
 			sizeof(struct Information), conn->core->cnf->size, conn->fp);
-	fprintf(stderr, "%d Database items written\n", members_written);
+	/* fprintf(stderr, "%d Database items written\n", members_written); */
 }
 
 void DatabaseClose(Connection *conn)
@@ -344,17 +345,25 @@ void DatabaseClose(Connection *conn)
 	}
 }
 
-void DatabaseList(Connection *conn)
+void DatabaseList(Connection *conn, WINDOW *win)
 {
 	int i;
-	fprintf(stderr, "delete_index %d\nfree_index %d\n", 
-			conn->core->cnf->delete_index, 
-			conn->core->cnf->free_index);
+	/* fprintf(stderr, "delete_index %d\nfree_index %d\n",
+	   conn->core->cnf->delete_index, 
+	   conn->core->cnf->free_index);*/
 
-	for (i = 0; i < conn->core->cnf->size; i++) {
-		printf("%d %s %s\n", conn->core->db->rows[i].index, 
-				conn->core->db->rows[i].name, 
-				conn->core->db->rows[i].phone);
+	if (win) {
+		for (i = 0; i < conn->core->cnf->size; i++) {
+			wprintw(win, "%d %s %s\n", conn->core->db->rows[i].index, 
+					conn->core->db->rows[i].name, 
+					conn->core->db->rows[i].phone);
+		}
+	} else {
+		for (i = 0; i < conn->core->cnf->size; i++) {
+			printf("%d %s %s\n", conn->core->db->rows[i].index, 
+					conn->core->db->rows[i].name, 
+					conn->core->db->rows[i].phone);
+		}
 	}
 }
 
@@ -365,8 +374,8 @@ void DatabaseResize(Connection *conn, int *newsize)
 	int *size = &(conn->core->cnf->size);
 	int *free_index = &(conn->core->cnf->free_index);
 	int *delete_index = &(conn->core->cnf->delete_index);
-	printf("size = %i\nfree_index = %i\ndelete_index = %i\n", 
-			*size, *free_index, *delete_index);
+	/* printf("size = %i\nfree_index = %i\ndelete_index = %i\n",  */
+	/* *size, *free_index, *delete_index); */
 
 	if (*newsize > *size) {
 		struct Information *info = malloc((sizeof(struct Information)) * *size);
@@ -448,15 +457,25 @@ void DatabaseImport(Connection *conn)
 	}
 }
 
-void DatabaseFind(Connection *conn, char *name)
+void DatabaseFind(Connection *conn, char *name, WINDOW *win)
 {
 	int i;
-	for (i = 0; i < conn->core->cnf->size; i++) {
-		if (strncmp(conn->core->db->rows[i].name, name, MAX_DATA) == 0)
-			printf("%d %s %s\n", conn->core->db->rows[i].index,
-					conn->core->db->rows[i].name,
-					conn->core->db->rows[i].phone);
+	if (win) {
+		for (i = 0; i < conn->core->cnf->size; i++) {
+			if (strncmp(conn->core->db->rows[i].name, name, MAX_DATA) == 0)
+				wprintw(win, "%d %s %s\n", conn->core->db->rows[i].index,
+						conn->core->db->rows[i].name,
+						conn->core->db->rows[i].phone);
+		}
+	} else {
+		for (i = 0; i < conn->core->cnf->size; i++) {
+			if (strncmp(conn->core->db->rows[i].name, name, MAX_DATA) == 0)
+				printf("%d %s %s\n", conn->core->db->rows[i].index,
+						conn->core->db->rows[i].name,
+						conn->core->db->rows[i].phone);
+		}
 	}
+
 }
 
 void DatabaseSort(Connection *conn)
@@ -499,7 +518,7 @@ void ParseArguments(Connection *conn, const char *file, char *args)
 	arg4 = strtok(NULL, " ");
 
 	if (strncmp(arg1, "list", 1) == 0) {
-		DatabaseList(conn);
+		DatabaseList(conn, NULL);
 	}
 	if (strncmp(arg1, "export", 1) == 0) {
 		DatabaseExport(conn);
@@ -536,7 +555,7 @@ void ParseArguments(Connection *conn, const char *file, char *args)
 		DatabaseWrite(conn, file);
 	}
 	if (strncmp(arg1, "find", 1) == 0) {
-		DatabaseFind(conn, arg2);
+		DatabaseFind(conn, arg2, NULL);
 	}
 	if (strncmp(arg1, "help", 1) == 0) {
 		Shell_Usage();
@@ -567,5 +586,5 @@ void DatabaseShell(Connection *conn, const char *file)
 		}
 		input[(strlen(input)) - 1] = '\0';
 		ParseArguments(conn, file, input);
-	} while(strncmp(input, "quit", 1)); 
+	} while (strncmp(input, "quit", 1)); 
 }

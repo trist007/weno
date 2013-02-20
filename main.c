@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
 		   case 'l':
 			   fprintf(stderr, "list\n");
-			   DatabaseList(conn);
+			   DatabaseList(conn, NULL);
 			   break;
 
 		   case 'r':
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 
 		   case 'f':
 			   fprintf(stderr, "find\n");
-			   DatabaseFind(conn, argv[3]);
+			   DatabaseFind(conn, argv[3], NULL);
 			   break;
 
 		   case 'h':
