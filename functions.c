@@ -80,11 +80,13 @@ Connection *DatabaseLoad(const char *file, char *action)
 	Connection *conn = malloc(sizeof(link));
 	if (conn == NULL)
 		die("ERROR 78: could not malloc conn");
+	memset(conn, 0, sizeof(link));
 
 	struct Core *core_ptr = malloc(sizeof(struct Core));
 
 	if (core_ptr == NULL)
 		die("ERROR 83: could not malloc core_ptr");
+	memset(core_ptr, 0, sizeof(struct Core));
 
 	conn->core = core_ptr;
 
@@ -92,6 +94,7 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 	if (cnf_ptr == NULL)
 		die("ERROR 90: could not malloc cnf_ptr");
+	memset(cnf_ptr, 0, sizeof(struct Config));
 
 	conn->core->cnf = cnf_ptr;
 
@@ -99,6 +102,7 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 	if (db_ptr == NULL)
 		die("ERROR 97: could not malloc db");
+	memset(db_ptr, 0, sizeof(struct Database));
 
 	conn->core->db = db_ptr;
 
@@ -123,6 +127,8 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 		conn->core->db->rows = malloc((sizeof(struct Information)) 
 				* conn->core->cnf->size);
+		memset(conn->core->db->rows, 0, (sizeof(struct Information) * conn->core->cnf->size));
+
 		members_read = fread(conn->core->db->rows, 
 				sizeof(struct Information), conn->core->cnf->size, conn->fp);
 		/* fprintf(stderr, "%d Database members read\n", members_read);  */
@@ -138,6 +144,7 @@ void DatabaseCreate(Connection *conn, int *size)
 	if (*size > 0) {
 		struct Information *info = malloc((sizeof(struct Information)) 
 				* *size);
+		memset(info, 0, (sizeof(struct Information) * *size));
 
 		for (i = 0; i < *size; i++) {
 			info[i].index = i;
@@ -150,6 +157,7 @@ void DatabaseCreate(Connection *conn, int *size)
 	} else {
 		struct Information *info = malloc((sizeof(struct Information)) 
 				* MAX_ROWS);
+		memset(info, 0, (sizeof(struct Information) * MAX_ROWS));
 
 		for (i = 0; i < MAX_ROWS; i++) {
 			info[i].index = i;
@@ -171,8 +179,8 @@ void AddRecord(Connection *conn, int *index,
 	int *delete_index = &(conn->core->cnf->delete_index);
 
 	if (index == NULL) {
-		strncpy(rows[*free_index].name, name, MAX_DATA);
-		strncpy(rows[*free_index].phone, phone, MAX_DATA);
+		 strncpy(rows[*free_index].name, name, MAX_DATA); 
+		 strncpy(rows[*free_index].phone, phone, MAX_DATA); 
 
 		/* printf("%d %s %s\n",  
 				rows[*free_index].index, 
@@ -381,6 +389,7 @@ void DatabaseResize(Connection *conn, int *newsize)
 		struct Information *info = malloc((sizeof(struct Information)) * *size);
 		if (info == NULL)
 			die("ERROR 372: could not malloc info");
+		memset(info, 0, (sizeof(struct Information) * *size));
 
 		for (i = 0; i < *size; i++) {
 			info[i] = rows[i];
@@ -392,6 +401,7 @@ void DatabaseResize(Connection *conn, int *newsize)
 				* *newsize);
 		if (newinfo == NULL)
 			die("ERROR 383: could not malloc newinfo");
+		memset(newinfo, 0, (sizeof(struct Information) * *newsize));
 
 		rows = newinfo;
 
@@ -416,6 +426,7 @@ void DatabaseResize(Connection *conn, int *newsize)
 				* *newsize);
 		if (newinfo == NULL)
 			die("ERROR 407: could not malloc newinfo");
+		memset(newinfo, 0, (sizeof(struct Information) * *newsize));
 
 		for (i = 0; i < *newsize; i++) {
 			newinfo[i] = rows[i];
