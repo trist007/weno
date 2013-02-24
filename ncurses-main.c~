@@ -277,7 +277,6 @@ void NcursesExamine(Connection *conn, const char *file)
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
 				if (y == (maxy / 2) + 3) down++;
-				//if ((y == (maxy / 2) + 3) && (y != (*size) - 1)) down++;
 				if (selection > (*size) - 1) {
 					selection = 0;
 					y = 0;
@@ -295,32 +294,11 @@ void NcursesExamine(Connection *conn, const char *file)
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
 				if (y == 0) down--;
-				//if (selection == 0) down = (maxy / 2) + 3;
-				//if (y == 0 && down != 0) down--;
 				if (selection < 0) {
 					selection = (*size) - 1;
 					y = (*size) / 2;
 					down = (*size) / 2;
 				}
-				/*
-				   if (down == 0 && y == -1) {
-				   down = (*size) / 2;
-				   y = (*size) / 2;
-				   }
-				   if (y == 0 && down != 0) {
-				   y++;
-				   down--;
-				   }
-				   if (selection == 0 && down == -1) {
-				//down = ((gety / 2) - 2); 
-				down = 24;
-				y = (gety / 2); 
-				}
-				if (selection < 0) {
-				selection = (*size) - 1;
-				y = (*size) / 2;
-				}
-				 */
 				NcursesSelection(&selection, conn);
 				break;
 
@@ -339,14 +317,14 @@ void NcursesExamine(Connection *conn, const char *file)
 						werase(body);
 						waddstr(body, "database size is already that size\n");
 						waddstr(body, "choose another size\n");
-						touchwin(body);
+						prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 						getch();
 					} else if (i <= *free_index || i <= (*delete_index) + 1) {
 						wmove(body, 0, 0);
 						werase(body);
 						waddstr(body, "cannot resize below valid records\n");
 						waddstr(body, "choose a larger size\n");
-						touchwin(body);
+						prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 						getch();
 					} else {
 						DatabaseResize(conn, &i);

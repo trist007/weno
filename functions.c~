@@ -249,7 +249,7 @@ void DeleteRecord(Connection *conn, int *index)
 		 *delete_index, 
 		 *free_index);*/
 
-		if (*free_index == 0) {
+		if (*free_index == 0 && *delete_index == 0) {
 			die("ERROR 240: database empty already");
 		}
 

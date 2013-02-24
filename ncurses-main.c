@@ -317,14 +317,14 @@ void NcursesExamine(Connection *conn, const char *file)
 						werase(body);
 						waddstr(body, "database size is already that size\n");
 						waddstr(body, "choose another size\n");
-						touchwin(body);
+						prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 						getch();
 					} else if (i <= *free_index || i <= (*delete_index) + 1) {
 						wmove(body, 0, 0);
 						werase(body);
 						waddstr(body, "cannot resize below valid records\n");
 						waddstr(body, "choose a larger size\n");
-						touchwin(body);
+						prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 						getch();
 					} else {
 						DatabaseResize(conn, &i);

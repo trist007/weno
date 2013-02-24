@@ -249,7 +249,7 @@ void DeleteRecord(Connection *conn, int *index)
 		 *delete_index, 
 		 *free_index);*/
 
-		if (*free_index == 0) {
+		if (*free_index == 0 && *delete_index == 0) {
 			die("ERROR 240: database empty already");
 		}
 
@@ -267,7 +267,7 @@ void DeleteRecord(Connection *conn, int *index)
 	} else {
 		if (*index > *size || *index < 0) 
 			die("ERROR 256: index out of bounds");
-		if (*free_index == 0) 
+		if (*free_index == 0 && *delete_index == 0) 
 			die("ERROR 258: database empty already");
 		for (i = 0; i < MAX_DATA; i++) {
 			rows[*index].name[i] = 0;
