@@ -46,7 +46,7 @@ void NcursesUsage()
 	touchwin(usage);
 	wrefresh(usage);
 	getch();
-	prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 30);
+	prefresh(body, 0, 0, 5, 1, (maxy / 2) + 8, maxx - 30);
 	refresh();
 }
 
@@ -74,7 +74,7 @@ void NcursesConsole(Connection *conn, const char *file)
 		wmove(body, 0, 0);
 		werase(body);
 		DatabaseList(conn, body);
-		prefresh(body, 0, 0, 6, 2, ((maxy * 2) / 3) - 2, maxx - 3);
+		prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 
 		wgetnstr(console, console_buf, MAX_DATA);
 		arg1 = strtok(console_buf, " ");
@@ -167,7 +167,7 @@ void NcursesControl(Connection *conn, const char *file)
 	void mysighand(int signum) {
 		if (signum == 2) {
 			waddstr(body, "Catching SIGINT\nClosing DB\n");
-			prefresh(body, 0, 0, 6, 2, ((maxy * 2) / 3) - 2, maxx - 3);
+			prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 			DatabaseClose(conn);
 			exit(1);
 		}
@@ -193,7 +193,7 @@ void NcursesControl(Connection *conn, const char *file)
 					wattron(body, A_REVERSE);
 				mvwprintw(body, 0, 0, "%d %s %s", rows[0].index,
 						rows[0].name, rows[0].phone);
-				prefresh(body, 0, 0, 6, 2, ((maxy * 2) / 3) - 2, maxx - 3);
+				prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 				NcursesExamine(conn, file);
 				break;
 
@@ -225,7 +225,7 @@ void NcursesExamine(Connection *conn, const char *file)
 	int *delete_index = &(conn->core->cnf->delete_index);
 	int *size = &(conn->core->cnf->size);
 	do {
-		prefresh(body, down, 0, 6, 2, ((maxy * 2) / 3) - 2, maxx - 3);
+		prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 		input = getchar();
 
 		switch(input) {
@@ -375,7 +375,7 @@ void NcursesExamine(Connection *conn, const char *file)
 	werase(body);
 	wattroff(body, A_REVERSE);
 	DatabaseList(conn, body);
-	prefresh(body, down, 0, 6, 2, ((maxy * 2) /3) - 2, maxx - 3);
+	prefresh(body, down, 0, 6, 2, (maxy /2) + 8, maxx - 3);
 }
 
 void NcursesSelection(int *selection, Connection *conn)
@@ -387,7 +387,7 @@ void NcursesSelection(int *selection, Connection *conn)
 	mvwprintw(body, *selection, 0, "%d %s %s", rows[*selection].index,
 			rows[*selection].name, rows[*selection].phone);
 	touchwin(body);
-	prefresh(body, down, 0, 6, 2, ((maxy * 2) / 3) - 2, maxx - 3);
+	prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 
 }
 
@@ -464,12 +464,12 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	wrefresh(title);
 
 	// body window
-	border_body = newwin((2 * maxy) / 3, maxx - 2, 5, 1);
+	border_body = newwin(((2 * maxy) / 3) - 2, maxx - 2, 5, 1);
 	if (border_body == NULL) {
-	addstr("Unable to allocate memory for border body window");
-	DatabaseClose(conn);
-	endwin();
-	exit(1);
+		addstr("Unable to allocate memory for border body window");
+		DatabaseClose(conn);
+		endwin();
+		exit(1);
 	}	
 
 	wbkgd(border_body, COLOR_PAIR(1));
@@ -568,7 +568,7 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	NcursesCenter(resize, 0, "Resize to");
 
 	DatabaseList(conn, body);
-	prefresh(body, 0, 0, 6, 2, ((maxy * 2) / 3) - 2, maxx - 3);
+	prefresh(body, 0, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
 	refresh();
 
 	NcursesControl(conn, file);
