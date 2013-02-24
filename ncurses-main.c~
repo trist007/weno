@@ -107,7 +107,7 @@ void NcursesConsole(Connection *conn, const char *file)
 				DatabaseWrite(conn, file);
 			}
 			if (strncmp(arg1, "delete", 1) == 0) {
-				if (*free_index == 0) {
+				if (*free_index == 0 && *delete_index == 0) {
 					wmove(body, 0, 0);
 					werase(body);
 					waddstr(body, "database is already empty\n");
@@ -226,9 +226,12 @@ void NcursesExamine(Connection *conn, const char *file)
 	int *size = &(conn->core->cnf->size);
 	do {
 		getyx(body, gety, getx);
-		mvprintw(maxy - 10, maxx - 30, "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
-		mvprintw(maxy - 7, maxx - 30, "\ngety = %d\ngetx = %d\n", gety, getx);
-		mvprintw(maxy - 10, maxx - 30, "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
+		mvprintw(maxy - 10, maxx - 30, 
+				"\ny = %d\nx = %d\ndown = %d\n", y, x, down);
+		mvprintw(maxy - 7, maxx - 30, 
+				"\ngety = %d\ngetx = %d\n", gety, getx);
+		mvprintw(maxy - 10, maxx - 30, 
+				"\ny = %d\nx = %d\ndown = %d\n", y, x, down);
 		refresh();
 		prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 		input = getchar();
@@ -379,19 +382,21 @@ void NcursesSelection(int *selection, Connection *conn)
 void DatabaseNcurses(Connection *conn, const char *file)
 {
 	char banner[] = "weno shell v0.1 by Tristan Gonzalez - Copyright 2013";
-	char help[] = {" a - add_record, <index> <name> <phone>, if index is "
-		"omitted record is added to the next available index\n "
-			"c - create_database, <size> if omitted size of 10 is used\n "
-			"d - delete_record, <index>, if index is omitted last record "
-			"is deleted\n "
-			"e - export\n "
-			"f - find, <name>\n "
-			"i - import, create database first then it will import from "
-			"index 0 via stdin\n "
-			"l - list\n "
-			"q - quit, exit shell\n "
-			"r - resize <newsize>\n "
-			"s - sort"};
+	char help[] = {"[Master modes]\n"
+		" c - console, type in commands\n"
+		" e - examine, add/delete based on highlighted index\n"
+		" q = quit\n\n"
+
+		"[Commands]\n "
+
+		"a - add_record, console mode - <index> <name> <phone>, if index is "
+		"omitted record added to next available index\n "
+		"d - delete_record, <index>, if index omitted last record "
+		"deleted\n "
+		"f - find, <name>\n "
+		"q - quit, exit mode\n "
+		"r - resize <newsize>\n "
+		"s - sort"};
 
 	char *help_ptr = help;
 
@@ -472,7 +477,8 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	wbkgd(body, COLOR_PAIR(1));
 
 	// usage window
-	border_usage = newwin((2 * maxy) / 5, (maxx / 2) - 2, maxy / 4, maxx / 4);
+	border_usage = newwin((maxy / 2) - 5, maxx / 2, 
+			maxy / 4, maxx / 4);
 	if (border_usage == NULL) {
 		addstr("Unable to allocate memory for border usage window");
 		DatabaseClose(conn);
@@ -483,8 +489,8 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	wbkgd(border_usage, COLOR_PAIR(3));
 	box(border_usage, '|', '=');
 
-	usage = newwin(((2 * maxy) / 5) - 4, (maxx / 2) - 4, (maxy / 4) + 2, 
-			(maxx/4) + 1);
+	usage = newwin((maxy / 2) - 7, (maxx / 2) - 2, 
+			(maxy / 4) + 1, (maxx / 4) + 1);
 	if (usage == NULL) {
 		addstr("Unable to allocate memory for usage window");
 		DatabaseClose(conn);
@@ -498,8 +504,7 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	while (*help_ptr) {
 		getyx(usage, usage_y, usage_x);
 		if (*help_ptr == ' ')
-			if (usage_maxx - usage_x < 8)
-				waddch(usage, '\n');
+			if (usage_maxx - usage_x < 6) waddch(usage, '\n');
 		waddch(usage, *help_ptr);
 		help_ptr++;
 	}
