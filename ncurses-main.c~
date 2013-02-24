@@ -46,7 +46,7 @@ void NcursesUsage()
 	touchwin(usage);
 	wrefresh(usage);
 	getch();
-	prefresh(body, 0, 0, 5, 1, (maxy / 2) + 8, maxx - 30);
+	prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 	refresh();
 }
 
@@ -225,6 +225,11 @@ void NcursesExamine(Connection *conn, const char *file)
 	int *delete_index = &(conn->core->cnf->delete_index);
 	int *size = &(conn->core->cnf->size);
 	do {
+		getyx(body, gety, getx);
+		mvprintw(maxy - 10, maxx - 30, "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
+		mvprintw(maxy - 7, maxx - 30, "\ngety = %d\ngetx = %d\n", gety, getx);
+		mvprintw(maxy - 10, maxx - 30, "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
+		refresh();
 		prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 		input = getchar();
 
@@ -264,21 +269,15 @@ void NcursesExamine(Connection *conn, const char *file)
 
 				//case KEY_DOWN:
 			case 'j':
-				if (y != (*size) / 2)
-					y++;
+				if (y != (maxy / 2) + 3) y++;
 				wmove(body, y, 0);
 				selection++;
 				wmove(body, 0, 0);
 				werase(body);
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
-				mvprintw(maxy - 10, maxx - 30, "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
-				getyx(body, gety, getx);
-				mvprintw(maxy - 7, maxx - 30, "\ngety = %d\ngetx = %d\n", gety, getx);
-				refresh();
-				if (y == (((maxy * 2) / 3) - 4)) {
-					down++;
-				}
+				if (y == (maxy / 2) + 3) down++;
+				//if ((y == (maxy / 2) + 3) && (y != (*size) - 1)) down++;
 				if (selection > (*size) - 1) {
 					selection = 0;
 					y = 0;
@@ -289,31 +288,39 @@ void NcursesExamine(Connection *conn, const char *file)
 
 				//case KEY_UP:
 			case 'k':
+				if (y != 0) y--;
 				selection--;
-				y--;
 				wmove(body, 0, 0);
 				werase(body);
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
-				mvprintw(maxy - 10, maxx - 30, "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
-				refresh();
-				if (down == 0 && y == -1) {
-					down = (*size) / 2;
-					y = (*size) / 2;
-				}
-				if (y == 0 && down != 0) {
-					y++;
-					down--;
-				}
-				if (selection == 0 && down == -1) {
-					//down = ((gety / 2) - 2); 
-					down = 24;
-					y = (gety / 2); 
-				}
+				if (y == 0) down--;
+				//if (selection == 0) down = (maxy / 2) + 3;
+				//if (y == 0 && down != 0) down--;
 				if (selection < 0) {
 					selection = (*size) - 1;
 					y = (*size) / 2;
+					down = (*size) / 2;
 				}
+				/*
+				   if (down == 0 && y == -1) {
+				   down = (*size) / 2;
+				   y = (*size) / 2;
+				   }
+				   if (y == 0 && down != 0) {
+				   y++;
+				   down--;
+				   }
+				   if (selection == 0 && down == -1) {
+				//down = ((gety / 2) - 2); 
+				down = 24;
+				y = (gety / 2); 
+				}
+				if (selection < 0) {
+				selection = (*size) - 1;
+				y = (*size) / 2;
+				}
+				 */
 				NcursesSelection(&selection, conn);
 				break;
 
@@ -464,7 +471,7 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	wrefresh(title);
 
 	// body window
-	border_body = newwin((2 * maxy) / 3, maxx - 2, 5, 1);
+	border_body = newwin(((2 * maxy) / 3) - 2, maxx - 2, 5, 1);
 	if (border_body == NULL) {
 		addstr("Unable to allocate memory for border body window");
 		DatabaseClose(conn);
