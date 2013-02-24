@@ -18,7 +18,7 @@
 
 #define MAX_DATA 32
 
-int row;
+int up, down;
 int maxy, maxx, halfy, halfx;
 int usage_y, usage_x, usage_maxy, usage_maxx;
 
@@ -46,7 +46,7 @@ void NcursesUsage()
 	touchwin(usage);
 	wrefresh(usage);
 	getch();
-	prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+	prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 30);
 	refresh();
 }
 
@@ -74,7 +74,7 @@ void NcursesConsole(Connection *conn, const char *file)
 		wmove(body, 0, 0);
 		werase(body);
 		DatabaseList(conn, body);
-		prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+		prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 30);
 
 		wgetnstr(console, console_buf, MAX_DATA);
 		arg1 = strtok(console_buf, " ");
@@ -99,7 +99,7 @@ void NcursesConsole(Connection *conn, const char *file)
 						werase(body);
 						waddstr(body, "index out of bounds\n");
 						waddstr(body, "try again\n");
-						prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+						prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 30);
 						getch();
 					} else {
 						AddRecord(conn, &i, arg3, arg4);
@@ -113,7 +113,7 @@ void NcursesConsole(Connection *conn, const char *file)
 					werase(body);
 					waddstr(body, "database is already empty\n");
 					waddstr(body, "you can only add a record\n");
-					prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+					prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 30);
 					getch();
 				} else if (arg3 == NULL) {
 					DeleteRecord(conn, NULL);
@@ -130,14 +130,14 @@ void NcursesConsole(Connection *conn, const char *file)
 					werase(body);
 					waddstr(body, "database size is already that size\n");
 					waddstr(body, "choose another size\n");
-					prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+					prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 30);
 					getch();
 				} else if (i <= *free_index || i <= (*delete_index) + 1) {
 					wmove(body, 0, 0);
 					werase(body);
 					waddstr(body, "cannot resize below valid records\n");
 					waddstr(body, "choose a larger size\n");
-					prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+					prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 30);
 					getch();
 				} else {
 					DatabaseResize(conn, &i);
@@ -171,7 +171,7 @@ void NcursesControl(Connection *conn, const char *file)
 	void mysighand(int signum) {
 		if (signum == 2) {
 			waddstr(body, "Catching SIGINT\nClosing DB\n");
-			prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+			prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 			DatabaseClose(conn);
 			exit(1);
 		}
@@ -197,7 +197,7 @@ void NcursesControl(Connection *conn, const char *file)
 					wattron(body, A_REVERSE);
 				mvwprintw(body, 0, 0, "%d %s %s", rows[0].index,
 						rows[0].name, rows[0].phone);
-				prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+				prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 				NcursesExamine(conn, file);
 				break;
 
@@ -210,9 +210,13 @@ void NcursesControl(Connection *conn, const char *file)
 void NcursesExamine(Connection *conn, const char *file)
 {
 	int y, x;
+	int gety, getx;
+	gety = 0;
+	getx = 0;
 	y = 0;
 	x = 0;
-	row = 0;
+	down = 0;
+	up = 0;
 	int selection;
 	int input;
 	char examine_buf[MAX_DATA];
@@ -250,7 +254,7 @@ void NcursesExamine(Connection *conn, const char *file)
 				werase(body);
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
-				prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+				prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 				break;
 
 			case 'd':
@@ -260,29 +264,33 @@ void NcursesExamine(Connection *conn, const char *file)
 				werase(body);
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
-				prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+				prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 				break;
 
 				//case KEY_DOWN:
 			case 'j':
-				y++;
+				if (y != (*size) / 2)
+					y++;
+				wmove(body, y, 0);
 				selection++;
 				wmove(body, 0, 0);
 				werase(body);
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
-				mvprintw(maxy - 10, maxx - 30, "\ny = %d\nx = %d\n", y, x);
+				mvprintw(maxy - 11, maxx - 30, "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
+				getyx(body, gety, getx);
+				mvprintw(maxy - 8, maxx - 30, "\ngety = %d\ngetx = %d\n", gety, getx);
 				refresh();
-				if (y == 25) {
-					y--;
-					row++;
-					prefresh(body, row, 0, 5, 1, 30, maxx - 1);
+				if (y == (((maxy * 2) / 3) - 4)) {
+					//y--;
+					down++;
+					prefresh(body, down, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 				}
 				if (selection > (*size) - 1) {
 					selection = 0;
 					y = 0;
-					row = 0;
-					prefresh(body, row, 0, 5, 1, 30, maxx - 1);
+					down = 0;
+					prefresh(body, down, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 				}
 				NcursesSelection(&selection, conn);
 				break;
@@ -295,12 +303,26 @@ void NcursesExamine(Connection *conn, const char *file)
 				werase(body);
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
-				mvprintw(maxy - 10, maxx - 30, "\ny = %d\nx = %d\n", y, x);
+				mvprintw(maxy - 11, maxx - 30, "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
 				refresh();
-				if (y == 5 && row != 0) row--;
+				if (down == 0 && y == -1) {
+					down = (*size) / 2;
+					y = (*size) / 2;
+				}
+				if (y == 0 && down != 0) {
+					y++;
+					down--;
+					prefresh(body, down, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
+				}
+				if (selection == 0 && down == -1) {
+					//down = ((gety / 2) - 2); 
+					down = 24;
+					y = (gety / 2); 
+					prefresh(body, down, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
+				}
 				if (selection < 0) {
 					selection = (*size) - 1;
-					y = selection;
+					y = (*size) / 2;
 				}
 				NcursesSelection(&selection, conn);
 				break;
@@ -321,7 +343,7 @@ void NcursesExamine(Connection *conn, const char *file)
 						waddstr(body, "database size is already that size\n");
 						waddstr(body, "choose another size\n");
 						touchwin(body);
-						prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+						prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 						getch();
 					} else if (i <= *free_index || i <= (*delete_index) + 1) {
 						wmove(body, 0, 0);
@@ -329,7 +351,7 @@ void NcursesExamine(Connection *conn, const char *file)
 						waddstr(body, "cannot resize below valid records\n");
 						waddstr(body, "choose a larger size\n");
 						touchwin(body);
-						prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+						prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 						getch();
 					} else {
 						DatabaseResize(conn, &i);
@@ -344,7 +366,7 @@ void NcursesExamine(Connection *conn, const char *file)
 				werase(body);
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
-				prefresh(body, row, 0, 5, 1, 30, maxx - 1);
+				prefresh(body, down, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 				break;
 
 			case 's':
@@ -354,7 +376,7 @@ void NcursesExamine(Connection *conn, const char *file)
 				werase(body);
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
-				prefresh(body, row, 0, 5, 1, 30, maxx - 1);
+				prefresh(body, down, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 				break;
 
 			default:
@@ -367,7 +389,7 @@ void NcursesExamine(Connection *conn, const char *file)
 	werase(body);
 	wattroff(body, A_REVERSE);
 	DatabaseList(conn, body);
-	prefresh(body, row, 0, 5, 1, 30, maxx - 1);
+	prefresh(body, down, 0, 5, 1, (maxy * 2) /3, maxx - 1);
 }
 
 void NcursesSelection(int *selection, Connection *conn)
@@ -379,7 +401,7 @@ void NcursesSelection(int *selection, Connection *conn)
 	mvwprintw(body, *selection, 0, "%d %s %s", rows[*selection].index,
 			rows[*selection].name, rows[*selection].phone);
 	touchwin(body);
-	prefresh(body, row, 0, 5, 1, 30, maxx - 1);
+	prefresh(body, down, 0, 5, 1, (maxy * 2) / 3, maxx - 1);
 
 }
 
@@ -437,6 +459,8 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	halfy = maxy >> 1;
 
 	mvaddstr(maxy - 2, maxx - 17, "Press ? for help");
+	mvprintw(maxy - 4, maxx - 17, "maxy = %d", maxy);
+	mvprintw(maxy - 3, maxx - 17, "maxx = %d", maxx);
 	refresh();
 
 	// title window
@@ -477,10 +501,11 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	}	
 
 	wbkgd(body, COLOR_PAIR(1));
-	prefresh(body, 0, 0, 5, 1, 30, maxx - 30);
+	//prefresh(body, 0, 0, 5, 1, 30, maxx - 30);
+	prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 30);
 
 	// usage window
-	border_usage = newwin((2 * maxy) / 3, maxx - 2, maxy / 4, maxx / 4);
+	border_usage = newwin((2 * maxy) / 5, (maxx / 2) - 2, maxy / 4, maxx / 4);
 	if (border_usage == NULL) {
 		addstr("Unable to allocate memory for border usage window");
 		DatabaseClose(conn);
@@ -491,8 +516,8 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	wbkgd(border_usage, COLOR_PAIR(3));
 	box(border_usage, '|', '=');
 
-	usage = newwin((2 * maxy) / 5 - 4, (maxx / 2) - 4, (maxy / 4) + 2, 
-			(maxx/4) + 2);
+	usage = newwin(((2 * maxy) / 5) - 4, (maxx / 2) - 4, (maxy / 4) + 2, 
+			(maxx/4) + 1);
 	if (usage == NULL) {
 		addstr("Unable to allocate memory for usage window");
 		DatabaseClose(conn);
@@ -561,7 +586,9 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	NcursesCenter(resize, 0, "Resize to");
 
 	DatabaseList(conn, body);
-	prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+	prefresh(body, 0, 0, 5, 1, (maxy * 2) / 3, maxx - 30);
+	//prefresh(body, 0, 0, 5, 1, 30, maxx - 1);
+	refresh();
 
 	NcursesControl(conn, file);
 
