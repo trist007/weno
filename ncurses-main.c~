@@ -113,7 +113,7 @@ void NcursesConsole(Connection *conn, const char *file)
 					waddstr(body, "database is already empty\n");
 					waddstr(body, "you can only add a record\n");
 					getch();
-				} else if (arg3 == NULL) {
+				} else if (arg2 == NULL) {
 					DeleteRecord(conn, NULL);
 				} else {
 					int i = atoi(arg2);
@@ -226,6 +226,10 @@ void NcursesExamine(Connection *conn, const char *file)
 	int *size = &(conn->core->cnf->size);
 	do {
 		getyx(body, gety, getx);
+		mvprintw(maxy - 12, maxx - 30,
+				"free_index = %d\n", *free_index);
+		mvprintw(maxy - 11, maxx - 30,
+				"delete_index = %d\n", *delete_index);
 		mvprintw(maxy - 10, maxx - 30, 
 				"\ny = %d\nx = %d\ndown = %d\n", y, x, down);
 		mvprintw(maxy - 7, maxx - 30, 
@@ -453,8 +457,8 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	NcursesCenter(title, 1, banner);
 	wrefresh(title);
 
-	// body window
-	border_body = newwin(((2 * maxy) / 3) - 2, maxx - 2, 5, 1);
+	// body window (y size has to be tweaked by screen size)
+	border_body = newwin(((2 * maxy) / 3) - 5, maxx - 2, 5, 1);
 	if (border_body == NULL) {
 		addstr("Unable to allocate memory for border body window");
 		DatabaseClose(conn);

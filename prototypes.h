@@ -55,6 +55,10 @@ void AddRecord(Connection *conn, int *index, const char *name, const char *phone
 
 void DeleteRecord(Connection *conn, int *index);
 
+void AddInsert(Connection *conn, int *index, const char *name, const char *phone);
+
+void DeleteInsert(Connection *conn, int *index, const char *name, const char *phone);
+
 void DatabaseWrite(Connection *conn, const char *file);
 
 void DatabaseClose(Connection *conn);

@@ -40,7 +40,7 @@ struct Database {
 };
 
 struct Information {
-   int set;
+   int index;
    char name[MAX_DATA];
    char phone[MAX_DATA];
 };
