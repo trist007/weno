@@ -106,7 +106,7 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 	conn->core->db = db_ptr;
 
-	if (strchr("acdefilrsCS", *action) == NULL) {
+	if (strchr("acdefilrsCDIS", *action) == NULL) {
 		die("ERROR 102: strchr could not find available action");
 
 	} else if (*action == 'c') {
@@ -291,6 +291,7 @@ void DeleteRecord(Connection *conn, int *index)
 void AddInsert(Connection *conn, int *index,
 		const char *name, const char *phone)
 {
+	int i;
 	int db_size = (conn->core->cnf->size) + 10;
 	struct Information *rows = conn->core->db->rows;
 	int *free_index = &(conn->core->cnf->free_index);
@@ -299,12 +300,20 @@ void AddInsert(Connection *conn, int *index,
 
 	if (rows[*index].name == NULL)
 		AddRecord(conn, index, name, phone);
-
+	else  {
+		for (i = (*delete_index); i >= (*index); i--) {
+			memmove(&rows[i+1], &rows[i], sizeof(struct Information));
+			rows[i+1].index++;
+			(*size)++;
+		}
+		AddRecord(conn, index, name, phone);
+	}
 }
 
 void DeleteInsert(Connection *conn, int *index,
 		const char *name, const char *phone)
 {
+	int i;
 	int db_size = (conn->core->cnf->size) - 10;
 	struct Information *rows = conn->core->db->rows;
 	int *free_index = &(conn->core->cnf->free_index);
@@ -313,6 +322,14 @@ void DeleteInsert(Connection *conn, int *index,
 
 	if (rows[*index].name == NULL)
 		DeleteRecord(conn, index);
+	else {
+		DeleteRecord(conn, index);
+		for (i = *index; i < (*delete_index) + 1; i++) {
+			memmove(&rows[i], &rows[i + 1], sizeof(struct Information));
+			rows[i].index--;
+			(*size)--;
+		}
+	}
 }
 
 void DatabaseWrite(Connection *conn, const char *file)

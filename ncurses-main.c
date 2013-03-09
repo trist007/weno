@@ -265,8 +265,40 @@ void NcursesExamine(Connection *conn, const char *file)
 				DatabaseList(conn, body);
 				break;
 
+			case 'I':
+				touchwin(add);
+				wrefresh(add);
+				echo();
+				wmove(add, 1, 1);
+				wrefresh(add);
+				wgetnstr(add, examine_buf, MAX_DATA);
+				arg1 = strtok(examine_buf, " ");
+				arg2 = strtok(NULL, " ");
+				if (arg1) {
+					AddInsert(conn, &selection, arg1, arg2);
+					DatabaseWrite(conn, file);
+				}
+				noecho();
+				wmove(add, 1, 1);
+				wclrtoeol(add);
+				wmove(add, 1, 1);
+				wrefresh(add);
+				werase(body);
+				wattroff(body, A_REVERSE);
+				DatabaseList(conn, body);
+				break;
+
 			case 'd':
 				DeleteRecord(conn, &selection);
+				DatabaseWrite(conn, file);
+				wmove(body, 0, 0);
+				werase(body);
+				wattroff(body, A_REVERSE);
+				DatabaseList(conn, body);
+				break;
+
+			case 'D':
+				DeleteInsert(conn, &selection);
 				DatabaseWrite(conn, file);
 				wmove(body, 0, 0);
 				werase(body);
