@@ -129,9 +129,9 @@ Connection *DatabaseLoad(const char *file, char *action)
 				sizeof(struct Config), 1, conn->fp);
 		/* fprintf(stderr, "%d Config members read\n", members_read);  */
 
-		conn->core->db->rows = malloc((sizeof(struct Information)) 
-				* conn->core->cnf->size);
-		memset(conn->core->db->rows, 0, (sizeof(struct Information) * conn->core->cnf->size));
+		conn->core->db->rows = calloc(conn->core->cnf->size, sizeof(struct Information));
+		if (conn->core->db->rows == NULL)
+			die("ERROR 134: could not allocate space for rows");
 
 		members_read = fread(conn->core->db->rows, 
 				sizeof(struct Information), conn->core->cnf->size, conn->fp);
@@ -146,9 +146,9 @@ void DatabaseCreate(Connection *conn, int *size)
 	int i;
 
 	if (*size > 0) {
-		struct Information *info = malloc((sizeof(struct Information)) 
-				* *size);
-		memset(info, 0, (sizeof(struct Information) * *size));
+		struct Information *info = calloc(*size, sizeof(struct Information));
+		if (info == NULL)
+			die("ERROR 151: could not allocate space for info");
 
 		for (i = 0; i < *size; i++) {
 			info[i].index = i;
@@ -159,9 +159,9 @@ void DatabaseCreate(Connection *conn, int *size)
 		conn->core->cnf->delete_index = 0;
 
 	} else {
-		struct Information *info = malloc((sizeof(struct Information)) 
-				* MAX_ROWS);
-		memset(info, 0, (sizeof(struct Information) * MAX_ROWS));
+		struct Information *info = calloc(MAX_ROWS, sizeof(struct Information));
+		if (info == NULL)
+			die("ERROR 164: could not allocate space for info");
 
 		for (i = 0; i < MAX_ROWS; i++) {
 			info[i].index = i;
@@ -207,6 +207,8 @@ void AddRecord(Connection *conn, int *index,
 	}
 	if (*free_index >= *size)
 		DatabaseResize(conn, &db_size);
+
+	RecalculateIndexes(conn);
 }
 
 void DeleteRecord(Connection *conn, int *index)
@@ -247,6 +249,8 @@ void DeleteRecord(Connection *conn, int *index)
 
 	if (*delete_index < (db_size - 1))
 		DatabaseResize(conn, &db_size);
+
+	RecalculateIndexes(conn);
 }
 
 void AddInsert(Connection *conn, int *index,
@@ -375,10 +379,15 @@ void DatabaseResize(Connection *conn, int *newsize)
 	/* *size, *free_index, *delete_index); */
 
 	if (*newsize > *size) {
+		struct Information *info = calloc(*size, sizeof(struct Information));
+		if (info == NULL)
+			die("ERROR 384: could not allocate space for info");
+		/*
 		struct Information *info = malloc((sizeof(struct Information)) * *size);
 		if (info == NULL)
 			die("ERROR 420: could not malloc info");
 		memset(info, 0, (sizeof(struct Information) * *size));
+		*/
 
 		for (i = 0; i < *size; i++) {
 			info[i] = rows[i];
@@ -614,7 +623,7 @@ void RecalculateIndexes(Connection *conn)
 	int *delete_index = &(conn->core->cnf->delete_index);
 
 	*free_index = 0;
-	while (rows[*free_index].name[0] != 0)
+	while (rows[*free_index].phone[0] != 0)
 		(*free_index)++;
 	*delete_index = (*size) - 1;
 	while (rows[*delete_index].name[0] == 0)

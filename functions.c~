@@ -129,9 +129,7 @@ Connection *DatabaseLoad(const char *file, char *action)
 				sizeof(struct Config), 1, conn->fp);
 		/* fprintf(stderr, "%d Config members read\n", members_read);  */
 
-		conn->core->db->rows = malloc((sizeof(struct Information)) 
-				* conn->core->cnf->size);
-		memset(conn->core->db->rows, 0, (sizeof(struct Information) * conn->core->cnf->size));
+		conn->core->db->rows = calloc(conn->core->cnf->size, sizeof(struct Information));
 
 		members_read = fread(conn->core->db->rows, 
 				sizeof(struct Information), conn->core->cnf->size, conn->fp);
@@ -146,9 +144,7 @@ void DatabaseCreate(Connection *conn, int *size)
 	int i;
 
 	if (*size > 0) {
-		struct Information *info = malloc((sizeof(struct Information)) 
-				* *size);
-		memset(info, 0, (sizeof(struct Information) * *size));
+		struct Information *info = calloc(*size, sizeof(struct Information));
 
 		for (i = 0; i < *size; i++) {
 			info[i].index = i;
@@ -159,9 +155,7 @@ void DatabaseCreate(Connection *conn, int *size)
 		conn->core->cnf->delete_index = 0;
 
 	} else {
-		struct Information *info = malloc((sizeof(struct Information)) 
-				* MAX_ROWS);
-		memset(info, 0, (sizeof(struct Information) * MAX_ROWS));
+		struct Information *info = calloc(MAX_ROWS, sizeof(struct Information));
 
 		for (i = 0; i < MAX_ROWS; i++) {
 			info[i].index = i;
@@ -247,17 +241,6 @@ void DeleteRecord(Connection *conn, int *index)
 
 	if (*delete_index < (db_size - 1))
 		DatabaseResize(conn, &db_size);
-	/*
-	if (*free_index > *delete_index) {
-		//if ((*size) - (*free_index) >= 12) {
-		if ((*free_index) < db_size)
-			DatabaseResize(conn, &db_size);
-	} else if (*free_index < *delete_index) {
-		//if ((*size) - (*delete_index) >= 12)
-		if ((*delete_index) < db_size)
-			DatabaseResize(conn, &db_size);
-	}
-	*/
 }
 
 void AddInsert(Connection *conn, int *index,
@@ -625,7 +608,7 @@ void RecalculateIndexes(Connection *conn)
 	int *delete_index = &(conn->core->cnf->delete_index);
 
 	*free_index = 0;
-	while (rows[*free_index].name[0] != 0)
+	while (rows[*free_index].phone[0] != 0)
 		(*free_index)++;
 	*delete_index = (*size) - 1;
 	while (rows[*delete_index].name[0] == 0)
