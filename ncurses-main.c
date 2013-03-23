@@ -23,7 +23,7 @@ int maxy, maxx, halfy, halfx;
 int usage_y, usage_x, usage_maxy, usage_maxx;
 
 WINDOW *title, *border_body, *body, *border_console, *console,
-	   *border_usage, *usage, *add, *resize;
+	   *border_usage, *usage, *add, *resize, *find;
 
 void NcursesCenter(WINDOW *win, int row, const char *title)
 {
@@ -94,7 +94,7 @@ void NcursesConsole(Connection *conn, const char *file)
 					if ((arg2 == NULL) || (arg3 == NULL)) {
 						wmove(body, 0, 0);
 						werase(body);
-						waddstr(body, "name or phone are empty\n");
+						waddstr(body, "name or phone is empty\n");
 						prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 						getch();
 					} else
@@ -111,7 +111,7 @@ void NcursesConsole(Connection *conn, const char *file)
 						if ((arg3 == NULL) || (arg4 == NULL)) {
 							wmove(body, 0, 0);
 							werase(body);
-							waddstr(body, "name or phone are empty\n");
+							waddstr(body, "name or phone is empty\n");
 							prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 							getch();
 						} else {
@@ -311,7 +311,13 @@ void NcursesExamine(Connection *conn, const char *file)
 				wgetnstr(add, examine_buf, MAX_DATA);
 				arg1 = strtok(examine_buf, " ");
 				arg2 = strtok(NULL, " ");
-				if (arg1) {
+				if ((arg1 == NULL) || (arg2 == NULL)) {
+					wmove(body, 0, 0);
+					werase(body);
+					waddstr(body, "name or phone is empty\n");
+					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+					getch();
+				} else {
 					AddRecord(conn, &selection, arg1, arg2);
 					DatabaseWrite(conn, file);
 				}
@@ -365,6 +371,32 @@ void NcursesExamine(Connection *conn, const char *file)
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);
 				break;
+
+			case 'f':
+				touchwin(find);
+				wrefresh(find);
+				echo();
+				wmove(find, 1, 1);
+				wrefresh(find);
+				wgetnstr(find, examine_buf, MAX_DATA);
+				arg1 = strtok(examine_buf, " ");
+				if (arg1) {
+					wmove(body, 0, 0);
+					werase(body);
+					DatabaseFind(conn, arg1, body);
+					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+					getch();
+				}
+				noecho();
+				wmove(find, 1, 1);
+				wclrtoeol(find);
+				wmove(find, 1, 1);
+				wrefresh(find);
+				werase(body);
+				wattroff(body, A_REVERSE);
+				DatabaseList(conn, body);
+				break;
+
 
 				//case KEY_DOWN:
 			case 'j':
@@ -656,6 +688,19 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	box(resize, '|', '=');
 	NcursesCenter(resize, 0, "Resize to");
 
+	// find window
+	find = newwin(3, (maxx/3) - 2, maxy / 4, maxx / 4);
+	if (find == NULL) {
+		addstr("Unable to allocate memory for find window");
+		DatabaseClose(conn);
+		endwin();
+		exit(1);
+	}
+
+	wbkgd(find, COLOR_PAIR(1));
+	box(find, '|', '=');
+	NcursesCenter(find, 0, "Find");
+
 	DatabaseList(conn, body);
 	prefresh(body, 0, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
 	refresh();
@@ -671,6 +716,7 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	delwin(usage);
 	delwin(add);
 	delwin(resize);
+	delwin(find);
 	endwin();
 
 	printf("weno??\n");
