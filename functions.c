@@ -180,31 +180,17 @@ void AddRecord(Connection *conn, int *index,
 	struct Information *rows = conn->core->db->rows;
 	int *size = &(conn->core->cnf->size);
 	int *free_index = &(conn->core->cnf->free_index);
-	int *delete_index = &(conn->core->cnf->delete_index);
 
 
 	if (index == NULL) {
-		if ((name || phone) == NULL) {
+		if ((name == NULL) || (phone == NULL)) {
 			fprintf(stderr, "ERROR 186: name or phone is NULL\n");
 			exit(1);
 		}
 		strncpy(rows[*free_index].name, name, MAX_DATA); 
 		strncpy(rows[*free_index].phone, phone, MAX_DATA); 
 
-		if (*free_index == *delete_index) {
-			while (rows[*free_index].name[0]!= 0) {
-				(*free_index)++;
-			}
-			*delete_index = (*free_index) - 1;
-		} else {
-			while (rows[*free_index].name[0] != 0) {
-				if (rows[*free_index].index == 0)
-					break;
-				(*free_index)++;
-			}
-			if (*free_index > *delete_index)
-				*delete_index = (*free_index) - 1;
-		} 
+		RecalculateIndexes(conn);
 
 	} else {
 		if (*index > *size || *index < 0)
@@ -216,38 +202,17 @@ void AddRecord(Connection *conn, int *index,
 		strncpy(rows[*index].name, name, MAX_DATA);
 		strncpy(rows[*index].phone, phone, MAX_DATA);
 
-		if (*free_index == *index && *free_index == *delete_index) {
-			while (rows[*free_index].name[0] != 0) {
-				if (rows[*free_index].index == 0)
-					break;
-				(*free_index)++;
-			}
-			*delete_index = (*free_index) - 1;
-		} else {
-			while (rows[*free_index].name[0] != 0) {
-				if (rows[*free_index].index == 0)
-					break;
-				(*free_index)++;
-			}
-		}
-		if (*free_index > *delete_index)
-			*delete_index = (*free_index) - 1;
-		if (*index > *free_index)
-			*delete_index = *index;
+		RecalculateIndexes(conn);
+
 	}
 	if (*free_index >= *size)
 		DatabaseResize(conn, &db_size);
-
-	*free_index = 0;
-	while (rows[*free_index].name[0] != 0)
-		(*free_index)++;
-
 }
 
 void DeleteRecord(Connection *conn, int *index)
 {
 	int i;
-	int db_size = (conn->core->cnf->size) - 10;
+	int db_size = (conn->core->cnf->size) / 2;
 	struct Information *rows = conn->core->db->rows;
 	int *size = &(conn->core->cnf->size);
 	int *free_index = &(conn->core->cnf->free_index);
@@ -263,12 +228,8 @@ void DeleteRecord(Connection *conn, int *index)
 			rows[*delete_index].name[i] = 0;
 			rows[*delete_index].phone[i] = 0;
 		}
-		while (*delete_index != 0 && rows[*delete_index].name[0] == 0)
-			(*delete_index)--;
 
-		*free_index = 0;
-		while (rows[*free_index].name[0] != 0)
-			(*free_index)++;
+		RecalculateIndexes(conn);
 
 	} else {
 		if (*index > *size || *index < 0) 
@@ -280,41 +241,20 @@ void DeleteRecord(Connection *conn, int *index)
 			rows[*index].phone[i] = 0;
 		}
 
-		if (*delete_index == *index && *delete_index 
-				== *free_index && *delete_index != 0) {
-			(*free_index)--;
-			(*delete_index)--;
+		RecalculateIndexes(conn);
 
-		} else if (*delete_index == *index && *delete_index != 0) {
-			(*delete_index)--;
-		} else {
-			while (rows[*delete_index].name[0] == 0)
-				(*delete_index)--;
-		}
-		*free_index = 0;
-		while (rows[*free_index].name[0] != 0)
-			(*free_index)++;
 	}
 
-	if (*free_index > *delete_index) {
-		if ((*size) - (*free_index) >= 12) {
-			DatabaseResize(conn, &db_size);
-		}
-	} else if (*free_index < *delete_index) {
-		if ((*size) - (*delete_index) >= 12)
-			DatabaseResize(conn, &db_size);
-	}
+	if (*delete_index < (db_size - 1))
+		DatabaseResize(conn, &db_size);
 }
 
 void AddInsert(Connection *conn, int *index,
 		const char *name, const char *phone)
 {
 	int i;
-	int db_size = (conn->core->cnf->size) + 10;
 	struct Information *rows = conn->core->db->rows;
-	int *free_index = &(conn->core->cnf->free_index);
 	int *delete_index = &(conn->core->cnf->delete_index);
-	int *size = &(conn->core->cnf->size);
 
 	if (rows[*index].name == NULL)
 		AddRecord(conn, index, name, phone);
@@ -330,11 +270,9 @@ void AddInsert(Connection *conn, int *index,
 void DeleteInsert(Connection *conn, int *index)
 {
 	int i;
-	int db_size = (conn->core->cnf->size) - 10;
 	struct Information *rows = conn->core->db->rows;
 	int *free_index = &(conn->core->cnf->free_index);
 	int *delete_index = &(conn->core->cnf->delete_index);
-	int *size = &(conn->core->cnf->size);
 
 	if (rows[*index].name[0] == '\0')
 		DeleteRecord(conn, index);
@@ -667,3 +605,19 @@ void DatabaseShell(Connection *conn, const char *file)
 		}
 	} while (strncmp(input, "quit", 1)); 
 }
+
+void RecalculateIndexes(Connection *conn)
+{
+	struct Information *rows = conn->core->db->rows;
+	int *size = &(conn->core->cnf->size);
+	int *free_index = &(conn->core->cnf->free_index);
+	int *delete_index = &(conn->core->cnf->delete_index);
+
+	*free_index = 0;
+	while (rows[*free_index].name[0] != 0)
+		(*free_index)++;
+	*delete_index = (*size) - 1;
+	while (rows[*delete_index].name[0] == 0)
+		(*delete_index)--;
+}
+
