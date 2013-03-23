@@ -54,6 +54,16 @@ int main(int argc, char *argv[]) {
 			   DatabaseWrite(conn, file);
 			   break;
 
+		   case 'D':
+			   fprintf(stderr, "DeleteShift\n");
+			   if (argc == 3)
+				   DeleteRecord(conn, NULL);
+			   else
+				   DeleteInsert(conn, &index);
+
+			   DatabaseWrite(conn, file);
+			   break;
+
 		   case 'a':
 			   fprintf(stderr, "add\n");
 			   if (argc == 5)
@@ -78,6 +88,12 @@ int main(int argc, char *argv[]) {
 		   case 'i':
 			   fprintf(stderr, "import\n");
 			   DatabaseImport(conn);
+			   DatabaseWrite(conn, file);
+			   break;
+
+		   case 'I':
+			   fprintf(stderr, "Insert\n");
+			   AddInsert(conn, &index, argv[4], argv[5]);
 			   DatabaseWrite(conn, file);
 			   break;
 
@@ -108,13 +124,13 @@ int main(int argc, char *argv[]) {
 			   break;
 
 		   default:
-			   die("ERROR 106: default case");
+			   die("ERROR 127: default case");
 	   }
 
 	   DatabaseClose(conn);
 
    } else {
-	   die("ERROR 112: Usage");
+	   die("ERROR 133: Usage");
    }
 
    return 0;

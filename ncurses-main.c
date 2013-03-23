@@ -91,7 +91,14 @@ void NcursesConsole(Connection *conn, const char *file)
 
 			if (strncmp(arg1, "add", 1) == 0) {
 				if (arg4 == NULL) {
-					AddRecord(conn, NULL, arg2, arg3);
+					if ((arg2 == NULL) || (arg3 == NULL)) {
+						wmove(body, 0, 0);
+						werase(body);
+						waddstr(body, "name or phone are empty\n");
+						prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+						getch();
+					} else
+						AddRecord(conn, NULL, arg2, arg3);
 				} else {
 					int i = atoi(arg2);
 					if (i > *size || i < 0) {
@@ -101,7 +108,33 @@ void NcursesConsole(Connection *conn, const char *file)
 						waddstr(body, "try again\n");
 						getch();
 					} else {
-						AddRecord(conn, &i, arg3, arg4);
+						if ((arg3 == NULL) || (arg4 == NULL)) {
+							wmove(body, 0, 0);
+							werase(body);
+							waddstr(body, "name or phone are empty\n");
+							prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+							getch();
+						} else {
+							AddRecord(conn, &i, arg3, arg4);
+						}
+					}
+				}
+				DatabaseWrite(conn, file);
+			}
+			if (strncmp(arg1, "Insert", 1) == 0) {
+				if (arg4 == NULL) {
+					AddInsert(conn, NULL, arg2, arg3);
+				} else {
+					int i = atoi(arg2);
+					if (i > *size || i < 0) {
+						wmove(body, 0, 0);
+						werase(body);
+						waddstr(body, "index out of bounds\n");
+						waddstr(body, "try again\n");
+						prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+						getch();
+					} else {
+						AddInsert(conn, &i, arg3, arg4);
 					}
 				}
 				DatabaseWrite(conn, file);
@@ -112,12 +145,29 @@ void NcursesConsole(Connection *conn, const char *file)
 					werase(body);
 					waddstr(body, "database is already empty\n");
 					waddstr(body, "you can only add a record\n");
+					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 					getch();
 				} else if (arg2 == NULL) {
 					DeleteRecord(conn, NULL);
 				} else {
 					int i = atoi(arg2);
 					DeleteRecord(conn, &i);
+				}
+				DatabaseWrite(conn, file);
+			}
+			if (strncmp(arg1, "Delete", 1) == 0) {
+				if (*free_index == 0 && *delete_index == 0) {
+					wmove(body, 0, 0);
+					werase(body);
+					waddstr(body, "database is already empty\n");
+					waddstr(body, "you can only add a record\n");
+					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+					getch();
+				} else if (arg2 == NULL) {
+					DeleteInsert(conn, NULL);
+				} else {
+					int i = atoi(arg2);
+					DeleteInsert(conn, &i);
 				}
 				DatabaseWrite(conn, file);
 			}
@@ -128,12 +178,14 @@ void NcursesConsole(Connection *conn, const char *file)
 					werase(body);
 					waddstr(body, "database size is already that size\n");
 					waddstr(body, "choose another size\n");
+					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 					getch();
 				} else if (i <= *free_index || i <= (*delete_index) + 1) {
 					wmove(body, 0, 0);
 					werase(body);
 					waddstr(body, "cannot resize below valid records\n");
 					waddstr(body, "choose a larger size\n");
+					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 					getch();
 				} else {
 					DatabaseResize(conn, &i);
@@ -145,7 +197,11 @@ void NcursesConsole(Connection *conn, const char *file)
 				DatabaseWrite(conn, file);
 			}
 			if (strncmp(arg1, "find", 1) == 0) {
+				wmove(body, 0, 0);
+				werase(body);
 				DatabaseFind(conn, arg2, body);
+				prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+				getch();
 			}
 		} else
 			break;
@@ -226,6 +282,8 @@ void NcursesExamine(Connection *conn, const char *file)
 	int *size = &(conn->core->cnf->size);
 	do {
 		getyx(body, gety, getx);
+
+		// debug
 		mvprintw(maxy - 12, maxx - 30,
 				"\nfree_index = %d\n", *free_index);
 		mvprintw(maxy - 11, maxx - 30,
@@ -237,6 +295,8 @@ void NcursesExamine(Connection *conn, const char *file)
 		mvprintw(maxy - 10, maxx - 30, 
 				"\ny = %d\nx = %d\ndown = %d\n", y, x, down);
 		refresh();
+		// end of debug
+
 		prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 		input = getchar();
 
@@ -420,19 +480,21 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	char banner[] = "weno shell v0.1 by Tristan Gonzalez - Copyright 2013";
 	char help[] = {"[Master modes]\n"
 		" c - console, type in commands\n"
-		" e - examine, add/delete based on highlighted index\n"
-		" q = quit\n\n"
+			" e - examine, add/delete based on highlighted index\n"
+			" q = quit\n\n"
 
-		"[Commands]\n "
+			"[Commands]\n "
 
-		"a - add_record, console mode - <index> <name> <phone>, if index is "
-		"omitted record added to next available index\n "
-		"d - delete_record, <index>, if index omitted last record "
-		"deleted\n "
-		"f - find, <name>\n "
-		"q - quit, exit mode\n "
-		"r - resize <newsize>\n "
-		"s - sort"};
+			"a - add_record, console mode - <index> <name> <phone>, if index is "
+			"omitted record added to next available index\n "
+			"d - delete_record, <index>, if index omitted last record "
+			"deleted\n "
+			"D - delete_insert, <index>, delete and shift\n "
+			"I - insert, <index>, insert record and shift\n "
+			"f - find, <name>\n "
+			"q - quit, exit mode\n "
+			"r - resize <newsize>\n "
+			"s - sort"};
 
 	char *help_ptr = help;
 
@@ -490,7 +552,8 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	wrefresh(title);
 
 	// body window (y size has to be tweaked by screen size)
-	border_body = newwin(((2 * maxy) / 3) - 5, maxx - 2, 5, 1);
+	//border_body = newwin(((2 * maxy) / 3) - 5, maxx - 2, 5, 1);
+	border_body = newwin(((2 * maxy) / 3) - 2, maxx - 2, 5, 1);
 	if (border_body == NULL) {
 		addstr("Unable to allocate memory for border body window");
 		DatabaseClose(conn);
