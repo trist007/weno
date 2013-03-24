@@ -83,11 +83,11 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 	Connection *conn = calloc(1, sizeof(link));
 	if (conn == NULL)
-		die("ERROR 82: could not calloc conn");
+		die("ERROR 86: could not calloc conn");
 
 	struct Core *core_ptr = calloc(1, sizeof(struct Core));
 	if (core_ptr == NULL)
-		die("ERROR 88: could not calloc core_ptr");
+		die("ERROR 90: could not calloc core_ptr");
 
 	conn->core = core_ptr;
 
@@ -99,24 +99,24 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 	struct Database *db_ptr = calloc(1, sizeof(struct Database));
 	if (db_ptr == NULL)
-		die("ERROR 104: could not calloc db");
+		die("ERROR 102: could not calloc db");
 
 	conn->core->db = db_ptr;
 
 	if (strchr("acdefhilrsACDIS", *action) == NULL) {
-		die("ERROR 1110: strchr could not find available action");
+		die("ERROR 107: strchr could not find available action");
 
 	} else if (*action == 'c') {
 		conn->fp = fopen(file, "w");
 
 		if (conn->fp == NULL)
-			die("ERROR 116: could not open file");
+			die("ERROR 113: could not open file");
 
 	} else {
 		conn->fp = fopen(file, "r+");
 
 		if (conn->fp == NULL)
-			die("ERROR 122: could not open file");
+			die("ERROR 119: could not open file");
 
 		members_read = fread(conn->core->cnf, 
 				sizeof(struct Config), 1, conn->fp);
@@ -124,7 +124,7 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 		conn->core->db->rows = calloc(conn->core->cnf->size, sizeof(struct Information));
 		if (conn->core->db->rows == NULL)
-			die("ERROR 134: could not allocate space for rows");
+			die("ERROR 127: could not allocate space for rows");
 
 		members_read = fread(conn->core->db->rows, 
 				sizeof(struct Information), conn->core->cnf->size, conn->fp);
@@ -141,7 +141,7 @@ void DatabaseCreate(Connection *conn, int *size)
 	if (*size > 0) {
 		struct Information *info = calloc(*size, sizeof(struct Information));
 		if (info == NULL)
-			die("ERROR 151: could not allocate space for info");
+			die("ERROR 144: could not allocate space for info");
 
 		for (i = 0; i < *size; i++) {
 			info[i].index = i;
@@ -154,7 +154,7 @@ void DatabaseCreate(Connection *conn, int *size)
 	} else {
 		struct Information *info = calloc(MAX_ROWS, sizeof(struct Information));
 		if (info == NULL)
-			die("ERROR 164: could not allocate space for info");
+			die("ERROR 157: could not allocate space for info");
 
 		for (i = 0; i < MAX_ROWS; i++) {
 			info[i].index = i;
@@ -177,7 +177,7 @@ void AddRecord(Connection *conn, int *index,
 
 	if (index == NULL) {
 		if ((name == NULL) || (phone == NULL)) {
-			fprintf(stderr, "ERROR 186: name or phone is NULL\n");
+			fprintf(stderr, "ERROR 180: name or phone is NULL\n");
 			exit(1);
 		}
 		strncpy(rows[*free_index].name, name, MAX_DATA); 
@@ -187,9 +187,9 @@ void AddRecord(Connection *conn, int *index,
 
 	} else {
 		if (*index > *size || *index < 0)
-			die("ERROR 202: index out of bounds");
+			die("ERROR 190: index out of bounds");
 		if ((name == NULL) || (phone == NULL)) {
-			fprintf(stderr, "ERROR 211: name or phone is NULL\n");
+			fprintf(stderr, "ERROR 192: name or phone is NULL\n");
 			exit(1);
 		}
 		strncpy(rows[*index].name, name, MAX_DATA);
@@ -198,8 +198,10 @@ void AddRecord(Connection *conn, int *index,
 		RecalculateIndexes(conn);
 
 	}
-	if (*free_index >= *size)
+	while (*free_index >= (*size - 1)) {
 		DatabaseResize(conn, &db_size);
+		db_size *= 2;
+	}
 
 	RecalculateIndexes(conn);
 }
@@ -216,7 +218,7 @@ void DeleteRecord(Connection *conn, int *index)
 	if (index == NULL) {
 
 		if (*free_index == 0 && *delete_index == 0) {
-			die("ERROR 241: database empty already");
+			die("ERROR 219: database empty already");
 		}
 
 		for (i = 0; i < MAX_DATA; i++) {
@@ -224,24 +226,23 @@ void DeleteRecord(Connection *conn, int *index)
 			rows[*delete_index].phone[i] = 0;
 		}
 
-		RecalculateIndexes(conn);
-
 	} else {
 		if (*index > *size || *index < 0) 
-			die("ERROR 257: index out of bounds");
+			die("ERROR 231: index out of bounds");
 		if (*free_index == 0 && *delete_index == 0) 
-			die("ERROR 259: database empty already");
+			die("ERROR 233: database empty already");
 		for (i = 0; i < MAX_DATA; i++) {
 			rows[*index].name[i] = 0;
 			rows[*index].phone[i] = 0;
 		}
-
-		RecalculateIndexes(conn);
-
 	}
 
-	if (*delete_index < (db_size - 1))
+	RecalculateIndexes(conn);
+
+	while (*delete_index < (db_size - 1)) {
 		DatabaseResize(conn, &db_size);
+		db_size /= 2;
+	}
 
 	RecalculateIndexes(conn);
 }
@@ -305,37 +306,37 @@ void DatabaseClose(Connection *conn)
 	if (conn->fp) {
 		fclose(conn->fp);
 	} else {
-		die("ERROR 351: file descriptor not found");
+		die("ERROR 308: file descriptor not found");
 	}
 
 	if (conn->core->db->rows) {
 		free(conn->core->db->rows);
 	} else {
-		die("ERROR 357: unable to free conn->core->db->rows");
+		die("ERROR 314: unable to free conn->core->db->rows");
 	}
 
 	if (conn->core->db) {
 		free(conn->core->db);
 	} else {
-		die("ERROR 363: unable to free conn->core->db");
+		die("ERROR 320: unable to free conn->core->db");
 	}
 
 	if (conn->core->cnf) {
 		free(conn->core->cnf);
 	} else {
-		die("ERROR 369: unable to free conn->core->cnf");
+		die("ERROR 326: unable to free conn->core->cnf");
 	}
 
 	if (conn->core) {
 		free(conn->core);
 	} else {
-		die("ERROR 375: unable to free conn->core");
+		die("ERROR 332: unable to free conn->core");
 	}
 
 	if (conn) {
 		free(conn);
 	} else {
-		die("ERROR 381: unable to free conn");
+		die("ERROR 338: unable to free conn");
 	}
 }
 
@@ -374,7 +375,7 @@ void DatabaseResize(Connection *conn, int *newsize)
 	if (*newsize > *size) {
 		struct Information *info = calloc(*size, sizeof(struct Information));
 		if (info == NULL)
-			die("ERROR 384: could not allocate space for info");
+			die("ERROR 377: could not allocate space for info");
 
 		for (i = 0; i < *size; i++) {
 			info[i] = rows[i];
@@ -384,7 +385,7 @@ void DatabaseResize(Connection *conn, int *newsize)
 
 		struct Information *newinfo = calloc(*newsize, sizeof(struct Information));
 		if (newinfo == NULL)
-			die("ERROR 432: could not calloc newinfo");
+			die("ERROR 387: could not calloc newinfo");
 
 		rows = newinfo;
 
@@ -399,15 +400,15 @@ void DatabaseResize(Connection *conn, int *newsize)
 		conn->core->db->rows = rows;
 
 	} else if (*size == *newsize) {
-		die("ERROR 448: resize, old size is the same as the new size");
+		die("ERROR 402: resize, old size is the same as the new size");
 	} else if (*newsize <= *free_index || 
 			*newsize <= (*delete_index + 1)) {
-		die("ERROR 451: resize: cannot resize below valid records");
+		die("ERROR 405: resize: cannot resize below valid records");
 	}
 	else  {
 		struct Information *newinfo = calloc(*newsize, sizeof(struct Information)); 
 		if (newinfo == NULL)
-			die("ERROR 457: could not calloc newinfo");
+			die("ERROR 410: could not calloc newinfo");
 
 		for (i = 0; i < *newsize; i++) {
 			newinfo[i] = rows[i];
@@ -525,11 +526,12 @@ void DatabaseArrange(Connection *conn)
 
 	RecalculateIndexes(conn);
 
-	if (*delete_index < (db_size - 1))
+	while (*delete_index < (db_size - 1)) {
 		DatabaseResize(conn, &db_size);
+		db_size /= 2;
+	}
 
 	RecalculateIndexes(conn);
-
 }
 
 void ParseArguments(Connection *conn, const char *file, char *args)
