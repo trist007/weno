@@ -74,6 +74,12 @@ int main(int argc, char *argv[]) {
 			   DatabaseWrite(conn, file);
 			   break;
 
+		   case 'A':
+			   fprintf(stderr, "Arrange\n");
+			   DatabaseArrange(conn);
+			   DatabaseWrite(conn, file);
+			   break;
+
 		   case 'l':
 			   fprintf(stderr, "list\n");
 			   DatabaseList(conn, NULL);

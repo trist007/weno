@@ -93,3 +93,5 @@ void NcursesConsole(Connection *conn, const char *file);
 void NcursesExamine(Connection *conn, const char *file);
 
 void NcursesSelection(int *selection, Connection *conn);
+
+void RecalculateIndexes(Connection *conn);

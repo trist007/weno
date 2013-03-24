@@ -81,36 +81,29 @@ Connection *DatabaseLoad(const char *file, char *action)
 {
 	size_t members_read = 0;
 
-	Connection *conn = malloc(sizeof(link));
+	Connection *conn = calloc(1, sizeof(link));
 	if (conn == NULL)
-		die("ERROR 82: could not malloc conn");
-	memset(conn, 0, sizeof(link));
+		die("ERROR 82: could not calloc conn");
 
-	struct Core *core_ptr = malloc(sizeof(struct Core));
-
+	struct Core *core_ptr = calloc(1, sizeof(struct Core));
 	if (core_ptr == NULL)
-		die("ERROR 88: could not malloc core_ptr");
-	memset(core_ptr, 0, sizeof(struct Core));
+		die("ERROR 88: could not calloc core_ptr");
 
 	conn->core = core_ptr;
 
-	struct Config *cnf_ptr = malloc(sizeof(struct Config));
-
+	struct Config *cnf_ptr = calloc(1, sizeof(struct Config));
 	if (cnf_ptr == NULL)
-		die("ERROR 96: could not malloc cnf_ptr");
-	memset(cnf_ptr, 0, sizeof(struct Config));
+		die("ERROR 96: could not calloc cnf_ptr");
 
 	conn->core->cnf = cnf_ptr;
 
-	struct Database *db_ptr = malloc(sizeof(struct Database));
-
+	struct Database *db_ptr = calloc(1, sizeof(struct Database));
 	if (db_ptr == NULL)
-		die("ERROR 104: could not malloc db");
-	memset(db_ptr, 0, sizeof(struct Database));
+		die("ERROR 104: could not calloc db");
 
 	conn->core->db = db_ptr;
 
-	if (strchr("acdefhilrsCDIS", *action) == NULL) {
+	if (strchr("acdefhilrsACDIS", *action) == NULL) {
 		die("ERROR 1110: strchr could not find available action");
 
 	} else if (*action == 'c') {
@@ -382,12 +375,6 @@ void DatabaseResize(Connection *conn, int *newsize)
 		struct Information *info = calloc(*size, sizeof(struct Information));
 		if (info == NULL)
 			die("ERROR 384: could not allocate space for info");
-		/*
-		struct Information *info = malloc((sizeof(struct Information)) * *size);
-		if (info == NULL)
-			die("ERROR 420: could not malloc info");
-		memset(info, 0, (sizeof(struct Information) * *size));
-		*/
 
 		for (i = 0; i < *size; i++) {
 			info[i] = rows[i];
@@ -395,11 +382,9 @@ void DatabaseResize(Connection *conn, int *newsize)
 
 		free(rows);
 
-		struct Information *newinfo = malloc((sizeof(struct Information)) 
-				* *newsize);
+		struct Information *newinfo = calloc(*newsize, sizeof(struct Information));
 		if (newinfo == NULL)
-			die("ERROR 432: could not malloc newinfo");
-		memset(newinfo, 0, (sizeof(struct Information) * *newsize));
+			die("ERROR 432: could not calloc newinfo");
 
 		rows = newinfo;
 
@@ -420,11 +405,9 @@ void DatabaseResize(Connection *conn, int *newsize)
 		die("ERROR 451: resize: cannot resize below valid records");
 	}
 	else  {
-		struct Information *newinfo = malloc((sizeof(struct Information)) 
-				* *newsize);
+		struct Information *newinfo = calloc(*newsize, sizeof(struct Information)); 
 		if (newinfo == NULL)
-			die("ERROR 457: could not malloc newinfo");
-		memset(newinfo, 0, (sizeof(struct Information) * *newsize));
+			die("ERROR 457: could not calloc newinfo");
 
 		for (i = 0; i < *newsize; i++) {
 			newinfo[i] = rows[i];
@@ -497,8 +480,6 @@ void DatabaseSort(Connection *conn)
 	int *delete_index = &(conn->core->cnf->delete_index);
 
 	for (i = 0; i <= *delete_index; i++) {
-		if (rows[i].name[0] == 0)
-			break;
 		for (j = i + 1; j <= *delete_index; j++) {
 			if (rows[j].name[0] == 0)
 				break;
@@ -512,6 +493,43 @@ void DatabaseSort(Connection *conn)
 			}
 		}
 	}
+}
+
+void DatabaseArrange(Connection *conn)
+{
+	int i = 0;
+	int j = 0;
+	int x = 0;
+	int db_size = (conn->core->cnf->size) / 2;
+	struct Information *rows = conn->core->db->rows;
+	int *delete_index = &(conn->core->cnf->delete_index);
+
+	while (j < (*delete_index)) {
+		while (rows[j].name[0] == '\0') {
+			do {
+				x++;
+			} while (rows[j + x].name[0] == '\0');
+
+			memmove(&rows[j], &rows[j + x], sizeof(struct Information));
+			if ((*delete_index) == j + x)
+				*delete_index = j;
+			for (i = 0; i < MAX_DATA; i++) {
+				rows[j + x].name[i] = 0;
+				rows[j + x].phone[i] = 0;
+			}
+			rows[j].index = j;
+		}
+		j++;
+		x = 0;
+	}
+
+	RecalculateIndexes(conn);
+
+	if (*delete_index < (db_size - 1))
+		DatabaseResize(conn, &db_size);
+
+	RecalculateIndexes(conn);
+
 }
 
 void ParseArguments(Connection *conn, const char *file, char *args)

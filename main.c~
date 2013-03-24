@@ -85,11 +85,6 @@ int main(int argc, char *argv[]) {
 			   DatabaseWrite(conn, file);
 			   break;
 
-		   case 'h':
-			   fprintf(stderr, "help\n");
-			   Usage();
-			   break;
-
 		   case 'i':
 			   fprintf(stderr, "import\n");
 			   DatabaseImport(conn);
