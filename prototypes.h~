@@ -79,6 +79,10 @@ void DatabaseShell(Connection *conn, const char *file);
 
 void ParseArguments(Connection *conn, const char *file, char *args);
 
+void RecalculateIndexes(Connection *conn);
+
+void DatabaseArrange(Connection *conn);
+
 // Ncurses prototypes
 void DatabaseNcurses(Connection *conn, const char *file);
 
@@ -94,6 +98,8 @@ void NcursesExamine(Connection *conn, const char *file);
 
 void NcursesSelection(int *selection, Connection *conn);
 
-void RecalculateIndexes(Connection *conn);
+void NcursesResize(Connection *conn, const char *file);
 
-void DatabaseArrange(Connection *conn, const char *file);
+void NcursesReset(const char *message);
+
+void NcursesRefresh();

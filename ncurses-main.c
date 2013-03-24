@@ -17,6 +17,29 @@
 #include "prototypes.h"
 
 #define MAX_DATA 32
+#define PREFRESH prefresh(body, 0, 0, 6, 2, (maxy  / 2) + 8, maxx - 3)
+
+char banner[] = "weno shell v0.1 by Tristan Gonzalez - Copyright 2013";
+char help[] = {"[Master modes]\n"
+	" c - console, type in commands\n"
+		" e - examine, add/delete based on highlighted index\n"
+		" q = quit\n\n"
+
+		"[Commands]\n "
+
+		"a - add_record, console mode - <index> <name> <phone>, if index is "
+		"omitted record added to next available index\n "
+		"A - arrange, gets rid of the empty slots\n "
+		"d - delete_record, <index>, if index omitted last record "
+		"deleted\n "
+		"D - delete_insert, <index>, delete and shift\n "
+		"I - insert, <index>, insert record and shift\n "
+		"f - find, <name>\n "
+		"q - quit, exit mode\n "
+		"r - resize <newsize>\n "
+		"s - sort, best to arrange first"};
+
+char *help_ptr = help;
 
 int up, down;
 int maxy, maxx, halfy, halfx;
@@ -46,7 +69,7 @@ void NcursesUsage()
 	touchwin(usage);
 	wrefresh(usage);
 	getch();
-	prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+	PREFRESH;
 	refresh();
 }
 
@@ -74,7 +97,7 @@ void NcursesConsole(Connection *conn, const char *file)
 		wmove(body, 0, 0);
 		werase(body);
 		DatabaseList(conn, body);
-		prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+		PREFRESH;
 
 		wgetnstr(console, console_buf, MAX_DATA);
 		arg1 = strtok(console_buf, " ");
@@ -92,28 +115,16 @@ void NcursesConsole(Connection *conn, const char *file)
 			if (strncmp(arg1, "add", 1) == 0) {
 				if (arg4 == NULL) {
 					if ((arg2 == NULL) || (arg3 == NULL)) {
-						wmove(body, 0, 0);
-						werase(body);
-						waddstr(body, "name or phone is empty\n");
-						prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-						getch();
+						NcursesReset("name or phone is empty\n");
 					} else
 						AddRecord(conn, NULL, arg2, arg3);
 				} else {
 					int i = atoi(arg2);
 					if (i > *size || i < 0) {
-						wmove(body, 0, 0);
-						werase(body);
-						waddstr(body, "index out of bounds\n");
-						waddstr(body, "try again\n");
-						getch();
+						NcursesReset("index out of bounds\n");
 					} else {
 						if ((arg3 == NULL) || (arg4 == NULL)) {
-							wmove(body, 0, 0);
-							werase(body);
-							waddstr(body, "name or phone is empty\n");
-							prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-							getch();
+							NcursesReset("name or phone is empty\n");
 						} else {
 							AddRecord(conn, &i, arg3, arg4);
 						}
@@ -127,12 +138,7 @@ void NcursesConsole(Connection *conn, const char *file)
 				} else {
 					int i = atoi(arg2);
 					if (i > *size || i < 0) {
-						wmove(body, 0, 0);
-						werase(body);
-						waddstr(body, "index out of bounds\n");
-						waddstr(body, "try again\n");
-						prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-						getch();
+						NcursesReset("index out of bounds\n");
 					} else {
 						AddInsert(conn, &i, arg3, arg4);
 					}
@@ -141,12 +147,7 @@ void NcursesConsole(Connection *conn, const char *file)
 			}
 			if (strncmp(arg1, "delete", 1) == 0) {
 				if (*free_index == 0 && *delete_index == 0) {
-					wmove(body, 0, 0);
-					werase(body);
-					waddstr(body, "database is already empty\n");
-					waddstr(body, "you can only add a record\n");
-					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-					getch();
+					NcursesReset("database is already empty\n");
 				} else if (arg2 == NULL) {
 					DeleteRecord(conn, NULL);
 				} else {
@@ -157,12 +158,7 @@ void NcursesConsole(Connection *conn, const char *file)
 			}
 			if (strncmp(arg1, "Delete", 1) == 0) {
 				if (*free_index == 0 && *delete_index == 0) {
-					wmove(body, 0, 0);
-					werase(body);
-					waddstr(body, "database is already empty\n");
-					waddstr(body, "you can only add a record\n");
-					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-					getch();
+					NcursesReset("database is already empty\n");
 				} else if (arg2 == NULL) {
 					DeleteInsert(conn, NULL);
 				} else {
@@ -174,19 +170,9 @@ void NcursesConsole(Connection *conn, const char *file)
 			if (strncmp(arg1, "resize", 1) == 0) {
 				int i = atoi(arg2);
 				if (i == *size) {
-					wmove(body, 0, 0);
-					werase(body);
-					waddstr(body, "database size is already that size\n");
-					waddstr(body, "choose another size\n");
-					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-					getch();
+					NcursesReset("database size is already that size\n");
 				} else if (i <= *free_index || i <= (*delete_index) + 1) {
-					wmove(body, 0, 0);
-					werase(body);
-					waddstr(body, "cannot resize below valid records\n");
-					waddstr(body, "choose a larger size\n");
-					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-					getch();
+					NcursesReset("cannot resize below valid records\n");
 				} else {
 					DatabaseResize(conn, &i);
 					DatabaseWrite(conn, file);
@@ -196,7 +182,7 @@ void NcursesConsole(Connection *conn, const char *file)
 				DatabaseArrange(conn);
 				DatabaseWrite(conn, file);
 			}
-				if (strncmp(arg1, "sort", 1) == 0) {
+			if (strncmp(arg1, "sort", 1) == 0) {
 				DatabaseSort(conn);
 				DatabaseWrite(conn, file);
 			}
@@ -204,7 +190,7 @@ void NcursesConsole(Connection *conn, const char *file)
 				wmove(body, 0, 0);
 				werase(body);
 				DatabaseFind(conn, arg2, body);
-				prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+				PREFRESH;
 				getch();
 			}
 		} else
@@ -227,7 +213,7 @@ void NcursesControl(Connection *conn, const char *file)
 	void mysighand(int signum) {
 		if (signum == 2) {
 			waddstr(body, "Catching SIGINT\nClosing DB\n");
-			prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+			PREFRESH;
 			DatabaseClose(conn);
 			exit(1);
 		}
@@ -253,8 +239,12 @@ void NcursesControl(Connection *conn, const char *file)
 					wattron(body, A_REVERSE);
 				mvwprintw(body, 0, 0, "%d %s %s", rows[0].index,
 						rows[0].name, rows[0].phone);
-				prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+				PREFRESH;
 				NcursesExamine(conn, file);
+				break;
+
+			case 'r':
+				NcursesResize(conn, file);
 				break;
 
 			default:
@@ -301,7 +291,7 @@ void NcursesExamine(Connection *conn, const char *file)
 		refresh();
 		// end of debug
 
-		prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+		PREFRESH;
 		input = getchar();
 
 		switch(input) {
@@ -316,11 +306,7 @@ void NcursesExamine(Connection *conn, const char *file)
 				arg1 = strtok(examine_buf, " ");
 				arg2 = strtok(NULL, " ");
 				if ((arg1 == NULL) || (arg2 == NULL)) {
-					wmove(body, 0, 0);
-					werase(body);
-					waddstr(body, "name or phone is empty\n");
-					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-					getch();
+					NcursesReset("name or phone is empty\n");
 				} else {
 					AddRecord(conn, &selection, arg1, arg2);
 					DatabaseWrite(conn, file);
@@ -330,9 +316,7 @@ void NcursesExamine(Connection *conn, const char *file)
 				wclrtoeol(add);
 				wmove(add, 1, 1);
 				wrefresh(add);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				break;
 
 			case 'I':
@@ -353,27 +337,19 @@ void NcursesExamine(Connection *conn, const char *file)
 				wclrtoeol(add);
 				wmove(add, 1, 1);
 				wrefresh(add);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				break;
 
 			case 'd':
 				DeleteRecord(conn, &selection);
 				DatabaseWrite(conn, file);
-				wmove(body, 0, 0);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				break;
 
 			case 'D':
 				DeleteInsert(conn, &selection);
 				DatabaseWrite(conn, file);
-				wmove(body, 0, 0);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				break;
 
 			case 'f':
@@ -388,7 +364,7 @@ void NcursesExamine(Connection *conn, const char *file)
 					wmove(body, 0, 0);
 					werase(body);
 					DatabaseFind(conn, arg1, body);
-					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+					PREFRESH;
 					getch();
 				}
 				noecho();
@@ -396,9 +372,7 @@ void NcursesExamine(Connection *conn, const char *file)
 				wclrtoeol(find);
 				wmove(find, 1, 1);
 				wrefresh(find);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				break;
 
 
@@ -407,10 +381,7 @@ void NcursesExamine(Connection *conn, const char *file)
 				if (y != (maxy / 2) + 3) y++;
 				wmove(body, y, 0);
 				selection++;
-				wmove(body, 0, 0);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				if (y == (maxy / 2) + 3) down++;
 				if (selection > (*size) - 1) {
 					selection = 0;
@@ -424,10 +395,7 @@ void NcursesExamine(Connection *conn, const char *file)
 			case 'k':
 				if (y != 0) y--;
 				selection--;
-				wmove(body, 0, 0);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				if (y == 0) down--;
 				if (selection < 0) {
 					selection = (*size) - 1;
@@ -448,19 +416,9 @@ void NcursesExamine(Connection *conn, const char *file)
 				if (arg1) {
 					int i = atoi(arg1);
 					if (i == *size) {
-						wmove(body, 0, 0);
-						werase(body);
-						waddstr(body, "database size is already that size\n");
-						waddstr(body, "choose another size\n");
-						prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-						getch();
+						NcursesReset("database size is already that size\n");
 					} else if (i <= *free_index || i <= (*delete_index) + 1) {
-						wmove(body, 0, 0);
-						werase(body);
-						waddstr(body, "cannot resize below valid records\n");
-						waddstr(body, "choose a larger size\n");
-						prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
-						getch();
+						NcursesReset("cannot resize below valid records\n");
 					} else {
 						DatabaseResize(conn, &i);
 						DatabaseWrite(conn, file);
@@ -471,27 +429,19 @@ void NcursesExamine(Connection *conn, const char *file)
 				wclrtoeol(resize);
 				wmove(resize, 1, 1);
 				wrefresh(resize);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				break;
 
 			case 'A':
 				DatabaseArrange(conn);
 				DatabaseWrite(conn, file);
-				wmove(body, 0, 0);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				break;
 
 			case 's':
 				DatabaseSort(conn);
 				DatabaseWrite(conn, file);
-				wmove(body, 0, 0);
-				werase(body);
-				wattroff(body, A_REVERSE);
-				DatabaseList(conn, body);
+				NcursesRefresh(conn);
 				break;
 
 			default:
@@ -500,11 +450,8 @@ void NcursesExamine(Connection *conn, const char *file)
 
 	} while (input != 'q');
 
-	wmove(body, 0, 0);
-	werase(body);
-	wattroff(body, A_REVERSE);
-	DatabaseList(conn, body);
-	prefresh(body, down, 0, 6, 2, (maxy /2) + 8, maxx - 3);
+	NcursesRefresh(conn);
+	PREFRESH;
 }
 
 void NcursesSelection(int *selection, Connection *conn)
@@ -516,46 +463,29 @@ void NcursesSelection(int *selection, Connection *conn)
 	mvwprintw(body, *selection, 0, "%d %s %s", rows[*selection].index,
 			rows[*selection].name, rows[*selection].phone);
 	touchwin(body);
-	prefresh(body, down, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
+	PREFRESH;
 
 }
 
-void DatabaseNcurses(Connection *conn, const char *file)
+void NcursesReset(const char *message)
 {
-	char banner[] = "weno shell v0.1 by Tristan Gonzalez - Copyright 2013";
-	char help[] = {"[Master modes]\n"
-		" c - console, type in commands\n"
-			" e - examine, add/delete based on highlighted index\n"
-			" q = quit\n\n"
+	wmove(body, 0, 0);
+	werase(body);
+	mvwprintw(body, 1, 1, "%s", message);
+	PREFRESH;
+	getch();
+}
 
-			"[Commands]\n "
+void NcursesRefresh(Connection *conn)
+{
+	wmove(body, 0, 0);
+	werase(body);
+	wattroff(body, A_REVERSE);
+	DatabaseList(conn, body);
+}
 
-			"a - add_record, console mode - <index> <name> <phone>, if index is "
-			"omitted record added to next available index\n "
-			"A - arrange, gets rid of the empty slots\n "
-			"d - delete_record, <index>, if index omitted last record "
-			"deleted\n "
-			"D - delete_insert, <index>, delete and shift\n "
-			"I - insert, <index>, insert record and shift\n "
-			"f - find, <name>\n "
-			"q - quit, exit mode\n "
-			"r - resize <newsize>\n "
-			"s - sort, best to arrange first"};
-
-	char *help_ptr = help;
-
-	/*int i;
-	  fprintf(stderr, "Initializing Ncurses");
-	  for (i = 0; i < 29; i++) {
-	  napms(20);
-	  fprintf(stderr, ".");
-	  }
-	  fprintf(stderr, "\nNcurses Engine Loaded\n");
-	  napms(500);
-	 */
-
-	initscr();
-
+void NcursesResize(Connection *conn, const char *file)
+{
 	if (has_colors() == TRUE) {
 		start_color();
 
@@ -716,8 +646,15 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	NcursesCenter(find, 0, "Find");
 
 	DatabaseList(conn, body);
-	prefresh(body, 0, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
+	PREFRESH;
 	refresh();
+}
+
+void DatabaseNcurses(Connection *conn, const char *file)
+{
+	initscr();
+
+	NcursesResize(conn, file);
 
 	NcursesControl(conn, file);
 

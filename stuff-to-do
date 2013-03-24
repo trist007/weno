@@ -1,11 +1,10 @@
-tree(linked list)
+select other databases
+save in ~/.weno
 encryption
-decryption
-browse multiple databases(friends, girls, pizza delivery)
+modem interface
+
+[experimental]
+tree(linked list)
 indexing
-ncurses
-insert
-import from next free_index
-interface with modem to place calls
 answering machine(save/playback audio recordings)
 tcp socket/pipe to accept commands
