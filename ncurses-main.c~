@@ -192,7 +192,11 @@ void NcursesConsole(Connection *conn, const char *file)
 					DatabaseWrite(conn, file);
 				}
 			}
-			if (strncmp(arg1, "sort", 1) == 0) {
+			if (strncmp(arg1, "Arrange", 1) == 0) {
+				DatabaseArrange(conn);
+				DatabaseWrite(conn, file);
+			}
+				if (strncmp(arg1, "sort", 1) == 0) {
 				DatabaseSort(conn);
 				DatabaseWrite(conn, file);
 			}
@@ -383,7 +387,7 @@ void NcursesExamine(Connection *conn, const char *file)
 				if (arg1) {
 					wmove(body, 0, 0);
 					werase(body);
-					DatabaseFind(conn, arg2, body);
+					DatabaseFind(conn, arg1, body);
 					prefresh(body, 0, 0, 6, 2, (maxy / 2) + 8, maxx - 3);
 					getch();
 				}
@@ -467,6 +471,15 @@ void NcursesExamine(Connection *conn, const char *file)
 				wclrtoeol(resize);
 				wmove(resize, 1, 1);
 				wrefresh(resize);
+				werase(body);
+				wattroff(body, A_REVERSE);
+				DatabaseList(conn, body);
+				break;
+
+			case 'A':
+				DatabaseArrange(conn);
+				DatabaseWrite(conn, file);
+				wmove(body, 0, 0);
 				werase(body);
 				wattroff(body, A_REVERSE);
 				DatabaseList(conn, body);

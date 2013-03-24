@@ -192,7 +192,11 @@ void NcursesConsole(Connection *conn, const char *file)
 					DatabaseWrite(conn, file);
 				}
 			}
-			if (strncmp(arg1, "sort", 1) == 0) {
+			if (strncmp(arg1, "Arrange", 1) == 0) {
+				DatabaseArrange(conn);
+				DatabaseWrite(conn, file);
+			}
+				if (strncmp(arg1, "sort", 1) == 0) {
 				DatabaseSort(conn);
 				DatabaseWrite(conn, file);
 			}
@@ -472,6 +476,15 @@ void NcursesExamine(Connection *conn, const char *file)
 				DatabaseList(conn, body);
 				break;
 
+			case 'A':
+				DatabaseArrange(conn);
+				DatabaseWrite(conn, file);
+				wmove(body, 0, 0);
+				werase(body);
+				wattroff(body, A_REVERSE);
+				DatabaseList(conn, body);
+				break;
+
 			case 's':
 				DatabaseSort(conn);
 				DatabaseWrite(conn, file);
@@ -519,6 +532,7 @@ void DatabaseNcurses(Connection *conn, const char *file)
 
 			"a - add_record, console mode - <index> <name> <phone>, if index is "
 			"omitted record added to next available index\n "
+			"A - arrange, gets rid of the empty slots\n "
 			"d - delete_record, <index>, if index omitted last record "
 			"deleted\n "
 			"D - delete_insert, <index>, delete and shift\n "
@@ -526,7 +540,7 @@ void DatabaseNcurses(Connection *conn, const char *file)
 			"f - find, <name>\n "
 			"q - quit, exit mode\n "
 			"r - resize <newsize>\n "
-			"s - sort"};
+			"s - sort, best to arrange first"};
 
 	char *help_ptr = help;
 

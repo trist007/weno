@@ -38,6 +38,7 @@ void Usage()
 			"Available actions:\n"
 			"-a add_record, <index> <name> <phone>, if index is omitted record "
 			"is added to next availabe index\n"
+			"-A arrange, gets rid of empty slots\n"
 			"-c create_database, <size> if omitted size of 10 is used\n"
 			"-C Ncurses interface\n"
 			"-d delete_record, <index>, if index is omitted last record is " 
@@ -51,7 +52,7 @@ void Usage()
 			"-I insert, <index>, insert record and shift\n"
 			"-l list\n"
 			"-r resize <newsize>\n"
-			"-s sort\n"
+			"-s sort, good to run Arrange first\n"
 			"-S shell\n");
 }
 
@@ -61,6 +62,7 @@ void Shell_Usage()
 			"Available actions:\n"
 			"a add_record, <index> <name> <phone>, if index is omitted record "
 			"is added to next available index\n"
+			"A arrange, gets rid of empty slots\n"
 			"c create_database, <size> if omitted size of 10 is used\n"
 			"d delete_record, <index>, if index is omitted last record is " 
 			"deleted\n"
@@ -592,6 +594,10 @@ void ParseArguments(Connection *conn, const char *file, char *args)
 	if (strncmp(arg1, "resize", 1) == 0) {
 		index = atoi(arg2);
 		DatabaseResize(conn, &index);
+		DatabaseWrite(conn, file);
+	}
+	if (strncmp(arg1, "Arrange", 1) == 0) {
+		DatabaseArrange(conn);
 		DatabaseWrite(conn, file);
 	}
 	if (strncmp(arg1, "sort", 1) == 0) {
