@@ -103,3 +103,11 @@ void NcursesResize(Connection *conn, const char *file);
 void NcursesReset(const char *message);
 
 void NcursesRefresh(Connection *conn);
+
+void NcursesOther(Connection *conn, const char *file);
+
+void NcursesBrowse(int *selection);
+
+void NcursesRenew();
+
+void NcursesReload();

@@ -120,6 +120,7 @@ Connection *DatabaseLoad(const char *file, char *action)
 		if (conn->fp == NULL)
 			die("ERROR 119: could not open file");
 
+		if (fread(conn
 		members_read = fread(conn->core->cnf, 
 				sizeof(struct Config), 1, conn->fp);
 		/* fprintf(stderr, "%d Config members read\n", members_read);  */
@@ -291,8 +292,11 @@ void DeleteInsert(Connection *conn, int *index)
 
 void DatabaseWrite(Connection *conn, const char *file)
 {
+	int signature = 53281; // 0xD021
 	size_t members_written = 0;
 	freopen(file, "w", conn->fp);
+
+	members_written = fwrite(&signature, sizeof(int), 1, conn->fp);
 
 	members_written = fwrite(conn->core->cnf, 
 			sizeof(struct Config), 1, conn->fp);
@@ -594,6 +598,10 @@ void ParseArguments(Connection *conn, const char *file, char *args)
 	if (strncmp(arg1, "resize", 1) == 0) {
 		index = atoi(arg2);
 		DatabaseResize(conn, &index);
+		DatabaseWrite(conn, file);
+	}
+	if (strncmp(arg1, "Arrange", 1) == 0) {
+		DatabaseArrange(conn);
 		DatabaseWrite(conn, file);
 	}
 	if (strncmp(arg1, "sort", 1) == 0) {

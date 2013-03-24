@@ -81,6 +81,7 @@ void Shell_Usage()
 
 Connection *DatabaseLoad(const char *file, char *action)
 {
+	int signature = 0;
 	size_t members_read = 0;
 
 	Connection *conn = calloc(1, sizeof(link));
@@ -119,6 +120,11 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 		if (conn->fp == NULL)
 			die("ERROR 119: could not open file");
+
+		// check signature
+		members_read = fread(&signature, sizeof(int), 1, conn->fp);
+		if (signature != 53281)
+			die("ERROR 127: db file not weno");
 
 		members_read = fread(conn->core->cnf, 
 				sizeof(struct Config), 1, conn->fp);
@@ -291,8 +297,11 @@ void DeleteInsert(Connection *conn, int *index)
 
 void DatabaseWrite(Connection *conn, const char *file)
 {
+	int signature = 53281; // 0xD021
 	size_t members_written = 0;
 	freopen(file, "w", conn->fp);
+
+	members_written = fwrite(&signature, sizeof(int), 1, conn->fp);
 
 	members_written = fwrite(conn->core->cnf, 
 			sizeof(struct Config), 1, conn->fp);

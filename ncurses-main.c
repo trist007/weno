@@ -18,35 +18,51 @@
 
 #define MAX_DATA 32
 #define PREFRESH prefresh(body, 0, 0, 6, 2, (maxy  / 2) + 8, maxx - 3)
+#define SUBWINDOWS newwin(3, (maxx/3) - 2, maxy / 3, maxx / 3)
 
 char banner[] = "weno shell v0.1 by Tristan Gonzalez - Copyright 2013";
 char help[] = {"[Master modes]\n"
-	" c - console, type in commands\n"
-		" e - examine, add/delete based on highlighted index\n"
-		" q = quit\n\n"
+		" c - console, type in commands\n"
+		" e - examine, add/delete highlighted index\n"
+		" n - encrypt/decrypt, <Coming Soon!>\n"
+		" o - select/create other databases\n"
+		" q = quit program\n"
+		" r = resize ncurses\n\n"
 
 		"[Commands]\n "
 
-		"a - add_record, console mode - <index> <name> <phone>, if index is "
+		"a - add_record, <index> <name> <phone>, if index is "
 		"omitted record added to next available index\n "
 		"A - arrange, gets rid of the empty slots\n "
-		"d - delete_record, <index>, if index omitted last record "
+		"c - create, new db, only in select/create mode\n "
+		"d - delete_record, <index>, if omitted last record "
 		"deleted\n "
 		"D - delete_insert, <index>, delete and shift\n "
 		"I - insert, <index>, insert record and shift\n "
 		"f - find, <name>\n "
+		"p - phone, <index>, dials number, <Coming Soon!>\n "
 		"q - quit, exit mode\n "
 		"r - resize <newsize>\n "
-		"s - sort, best to arrange first"};
+		"s - sort, sorts alphabetically, best to arrange first"};
 
+// global variables for DatabaseExamine
+int down;
+
+// global variables used throughout and initialized in NcursesResize
+int maxy, maxx, halfy, halfx;
+
+// global variables for usage window
+int usage_y, usage_x, usage_maxy, usage_maxx;
 char *help_ptr = help;
 
-int up, down;
-int maxy, maxx, halfy, halfx;
-int usage_y, usage_x, usage_maxy, usage_maxx;
+// global variables for DatabaseOther
+int lscount;
+char *ls_buf[256];
+char lsbuf[128][32];
 
+// global variables for windows initialized in NcursesResize
 WINDOW *title, *border_body, *body, *border_console, *console,
-	   *border_usage, *usage, *add, *resize, *find;
+	   *border_usage, *usage, *add, *resize, *find, *browse;
 
 void NcursesCenter(WINDOW *win, int row, const char *title)
 {
@@ -243,6 +259,12 @@ void NcursesControl(Connection *conn, const char *file)
 				NcursesExamine(conn, file);
 				break;
 
+			case 'o':
+				mvwprintw(body, 0, 0, "%s", lsbuf[0]);
+				PREFRESH;
+				NcursesOther(conn, file);
+				break;
+
 			case 'r':
 				NcursesResize(conn, file);
 				break;
@@ -256,13 +278,10 @@ void NcursesControl(Connection *conn, const char *file)
 void NcursesExamine(Connection *conn, const char *file)
 {
 	int y, x;
-	int gety, getx;
-	gety = 0;
-	getx = 0;
+	//int gety, getx;
 	y = 0;
 	x = 0;
 	down = 0;
-	up = 0;
 	int selection;
 	int input;
 	char examine_buf[MAX_DATA];
@@ -275,21 +294,21 @@ void NcursesExamine(Connection *conn, const char *file)
 	int *delete_index = &(conn->core->cnf->delete_index);
 	int *size = &(conn->core->cnf->size);
 	do {
+		/* debug
 		getyx(body, gety, getx);
 
-		// debug
-		mvprintw(maxy - 12, maxx - 30,
-				"\nfree_index = %d\n", *free_index);
-		mvprintw(maxy - 11, maxx - 30,
-				"\ndelete_index = %d\n", *delete_index);
-		mvprintw(maxy - 10, maxx - 30, 
-				"\ny = %d\nx = %d\ndown = %d\n", y, x, down);
-		mvprintw(maxy - 7, maxx - 30, 
-				"\ngety = %d\ngetx = %d\n", gety, getx);
-		mvprintw(maxy - 10, maxx - 30, 
-				"\ny = %d\nx = %d\ndown = %d\n", y, x, down);
-		refresh();
-		// end of debug
+		   mvprintw(maxy - 12, maxx - 30,
+		   "\nfree_index = %d\n", *free_index);
+		   mvprintw(maxy - 11, maxx - 30,
+		   "\ndelete_index = %d\n", *delete_index);
+		   mvprintw(maxy - 10, maxx - 30, 
+		   "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
+		   mvprintw(maxy - 7, maxx - 30, 
+		   "\ngety = %d\ngetx = %d\n", gety, getx);
+		   mvprintw(maxy - 10, maxx - 30, 
+		   "\ny = %d\nx = %d\ndown = %d\n", y, x, down);
+		   refresh();
+		 */
 
 		PREFRESH;
 		input = getchar();
@@ -471,7 +490,7 @@ void NcursesReset(const char *message)
 {
 	wmove(body, 0, 0);
 	werase(body);
-	mvwprintw(body, 1, 1, "%s", message);
+	mvwprintw(body, 0, 0, "%s", message);
 	PREFRESH;
 	getch();
 }
@@ -482,6 +501,111 @@ void NcursesRefresh(Connection *conn)
 	werase(body);
 	wattroff(body, A_REVERSE);
 	DatabaseList(conn, body);
+}
+
+void NcursesReload()
+{
+	wmove(body, 0, 0);
+	werase(body);
+	wattroff(body, A_REVERSE);
+	NcursesRenew();
+}
+
+void NcursesRenew()
+{
+	int i;
+	FILE *ls_output;
+	FILE *ls_count;
+	char count_buf[8];
+	char buf[256];
+
+	wmove(body, 0, 0);
+	werase(body);
+
+	system("/usr/bin/ls -a ~/dev/desk/weno > /tmp/weno");
+	system("/usr/bin/ls -a ~/dev/desk/weno | /usr/bin/wc -l > /tmp/weno_count");
+
+	ls_output = fopen("/tmp/weno", "r");
+	fread(buf, 1, 256, ls_output);
+
+	ls_count = fopen("/tmp/weno_count", "r");
+	fread(count_buf, 8, 1, ls_count);
+	lscount = atoi(count_buf);
+
+	ls_buf[0] = strtok(buf, "\n");
+	for (i = 1; i < lscount; i++)
+		ls_buf[i] = strtok(NULL, "\n");
+	for (i = 0; i < lscount; i++)
+		strncpy(lsbuf[i], ls_buf[i], 32);
+	for (i = 0; i < lscount; i++)
+		wprintw(body, "%s\n", lsbuf[i]);
+}
+
+void NcursesBrowse(int *selection)
+{
+	if (has_colors() == TRUE)
+		wattron(body, A_REVERSE);
+	mvwprintw(body, *selection, 0, "%s", lsbuf[*selection]);
+	touchwin(body);
+	PREFRESH;
+}
+
+
+void NcursesOther(Connection *conn, const char *file)
+{
+	int selection = 0;
+	int y = 0;
+	down = 0;
+	int input;
+
+	NcursesRenew();
+
+	do {
+		PREFRESH;
+		input = getchar();
+
+		switch(input) {
+
+			//case KEY_DOWN:
+			case 'j':
+				if (y != (maxy / 2) + 3) y++;
+				wmove(body, y, 0);
+				selection++;
+				NcursesReload();
+				if (y == (maxy / 2) + 3) down++;
+				if (selection > (lscount) - 1) {
+					selection = 0;
+					y = 0;
+					down = 0;
+				}
+				NcursesBrowse(&selection);
+				break;
+
+				//case KEY_UP:
+			case 'k':
+				if (y != 0) y--;
+				selection--;
+				NcursesReload();
+				if (y == 0) down--;
+				if (selection < 0) {
+					selection = (lscount) - 1;
+					y = (lscount) / 2;
+					down = (lscount) / 2;
+				}
+				NcursesBrowse(&selection);
+				break;
+
+			case 'r':
+				NcursesRenew();
+				break;
+
+			default:
+				break;
+		}
+	} while (input != 'q');
+
+	NcursesRefresh(conn);
+	PREFRESH;
 }
 
 void NcursesResize(Connection *conn, const char *file)
@@ -509,8 +633,12 @@ void NcursesResize(Connection *conn, const char *file)
 	halfy = maxy >> 1;
 
 	mvaddstr(maxy - 2, maxx - 17, "Press ? for help");
-	mvprintw(maxy - 4, maxx - 17, "maxy = %d", maxy);
-	mvprintw(maxy - 3, maxx - 17, "maxx = %d", maxx);
+
+	/* debug
+	   mvprintw(maxy - 4, maxx - 17, "maxy = %d", maxy);
+	   mvprintw(maxy - 3, maxx - 17, "maxx = %d", maxx);
+	 */
+
 	refresh();
 
 	// title window
@@ -552,8 +680,9 @@ void NcursesResize(Connection *conn, const char *file)
 	wbkgd(body, COLOR_PAIR(1));
 
 	// usage window
-	border_usage = newwin((maxy / 2) - 5, maxx / 2, 
-			maxy / 4, maxx / 4);
+	//border_usage = newwin((maxy / 2) - 5, maxx / 2, 
+	border_usage = newwin((maxy / 2) + 1, maxx / 2 + 13, 
+			(maxy / 4) - 4, (maxx / 4) - 6);
 	if (border_usage == NULL) {
 		addstr("Unable to allocate memory for border usage window");
 		DatabaseClose(conn);
@@ -564,8 +693,8 @@ void NcursesResize(Connection *conn, const char *file)
 	wbkgd(border_usage, COLOR_PAIR(3));
 	box(border_usage, '|', '=');
 
-	usage = newwin((maxy / 2) - 7, (maxx / 2) - 2, 
-			(maxy / 4) + 1, (maxx / 4) + 1);
+	usage = newwin((maxy / 2) - 1, (maxx / 2) + 11, 
+			(maxy / 4) - 3, (maxx / 4) - 5);
 	if (usage == NULL) {
 		addstr("Unable to allocate memory for usage window");
 		DatabaseClose(conn);
@@ -607,7 +736,7 @@ void NcursesResize(Connection *conn, const char *file)
 	box(console, '*', '*');
 
 	// add window
-	add = newwin(3, (maxx/3) - 2, maxy / 4, maxx / 4);
+	add = SUBWINDOWS;
 	if (add == NULL) {
 		addstr("Unable to allocate memory for add window");
 		DatabaseClose(conn);
@@ -620,7 +749,7 @@ void NcursesResize(Connection *conn, const char *file)
 	NcursesCenter(add, 0, "Add Record");
 
 	// resize window
-	resize = newwin(3, (maxx/3) - 2, maxy / 4, maxx / 4);
+	resize = SUBWINDOWS;
 	if (resize == NULL) {
 		addstr("Unable to allocate memory for resize window");
 		DatabaseClose(conn);
@@ -633,7 +762,7 @@ void NcursesResize(Connection *conn, const char *file)
 	NcursesCenter(resize, 0, "Resize to");
 
 	// find window
-	find = newwin(3, (maxx/3) - 2, maxy / 4, maxx / 4);
+	find = SUBWINDOWS;
 	if (find == NULL) {
 		addstr("Unable to allocate memory for find window");
 		DatabaseClose(conn);
@@ -644,6 +773,19 @@ void NcursesResize(Connection *conn, const char *file)
 	wbkgd(find, COLOR_PAIR(1));
 	box(find, '|', '=');
 	NcursesCenter(find, 0, "Find");
+
+	// browse window
+	browse = SUBWINDOWS;
+	if (browse == NULL) {
+		addstr("Unable to allocate memory for find window");
+		DatabaseClose(conn);
+		endwin();
+		exit(1);
+	}
+
+	wbkgd(browse, COLOR_PAIR(1));
+	box(browse, '|', '=');
+	NcursesCenter(browse, 0, "Add New Database");
 
 	DatabaseList(conn, body);
 	PREFRESH;
