@@ -18,6 +18,7 @@
 
 #define MAX_DATA 32
 #define PREFRESH prefresh(body, 0, 0, 6, 2, (maxy  / 2) + 8, maxx - 3)
+#define PREFRESH_SCROLL prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3)
 #define SUBWINDOWS newwin(3, (maxx/3) - 2, maxy / 3, maxx / 3)
 
 char banner[] = "weno shell v0.1 by Tristan Gonzalez - Copyright 2013";
@@ -45,6 +46,7 @@ char help[] = {"[Master modes]\n"
 		"r - resize <newsize>\n "
 		"s - sort, sorts alphabetically, best to arrange first"};
 
+// global variables used by NcursesExamine and NcursesOther
 int gety, getx;
 
 // global variables for DatabaseExamine
@@ -253,6 +255,7 @@ void NcursesControl(Connection *conn, const char *file)
 				break;
 
 			case 'e':
+				NcursesRefresh(conn);
 				if (has_colors() == TRUE)
 					wattron(body, A_REVERSE);
 				mvwprintw(body, 0, 0, "%d %s %s", rows[0].index,
@@ -262,6 +265,11 @@ void NcursesControl(Connection *conn, const char *file)
 				break;
 
 			case 'o':
+				NcursesReload();
+	touchwin(body);
+	wrefresh(body);
+				if (has_colors() == TRUE)
+					wattron(body, A_REVERSE);
 				mvwprintw(body, 0, 0, "%s", lsbuf[0]);
 				PREFRESH;
 				NcursesOther(conn, file);
@@ -294,7 +302,10 @@ void NcursesExamine(Connection *conn, const char *file)
 	int *free_index = &(conn->core->cnf->free_index);
 	int *delete_index = &(conn->core->cnf->delete_index);
 	int *size = &(conn->core->cnf->size);
+
+
 	do {
+		/* debug
 		getyx(body, gety, getx);
 
 		mvprintw(maxy - 10, maxx - 30, 
@@ -304,8 +315,9 @@ void NcursesExamine(Connection *conn, const char *file)
 		mvprintw(maxy - 10, maxx - 30, 
 				"\ny = %d\nx = %d\ndown = %d\n", y, x, down);
 		refresh();
+		*/
 
-		prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
+		PREFRESH_SCROLL;
 
 		input = getchar();
 
@@ -379,7 +391,7 @@ void NcursesExamine(Connection *conn, const char *file)
 					wmove(body, 0, 0);
 					werase(body);
 					DatabaseFind(conn, arg1, body);
-					prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
+					PREFRESH_SCROLL;
 					getch();
 				}
 				noecho();
@@ -411,7 +423,7 @@ void NcursesExamine(Connection *conn, const char *file)
 				if (y != 0) y--;
 				selection--;
 				NcursesRefresh(conn);
-				if (y == 0) down--;
+				if ((y == 0) && (down != 0)) down--;
 				if (selection < 0) {
 					selection = (*size) - 1;
 					y = (*size) / 2;
@@ -466,7 +478,7 @@ void NcursesExamine(Connection *conn, const char *file)
 	} while (input != 'q');
 
 	NcursesRefresh(conn);
-	prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
+	PREFRESH_SCROLL;
 }
 
 void NcursesSelection(int *selection, Connection *conn)
@@ -478,7 +490,7 @@ void NcursesSelection(int *selection, Connection *conn)
 	mvwprintw(body, *selection, 0, "%d %s %s", rows[*selection].index,
 			rows[*selection].name, rows[*selection].phone);
 	touchwin(body);
-	prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
+	PREFRESH_SCROLL;
 
 }
 
@@ -543,22 +555,21 @@ void NcursesBrowse(int *selection)
 		wattron(body, A_REVERSE);
 	mvwprintw(body, *selection, 0, "%s", lsbuf[*selection]);
 	touchwin(body);
-	prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
+	PREFRESH_SCROLL;
 }
-
 
 void NcursesOther(Connection *conn, const char *file)
 {
+	int y, x;
 	int selection = 0;
-	int y = 0;
-	int x = 0;
+	y = 0;
+	x = 0;
 	down = 0;
 	int input;
 	getyx(body, gety, getx);
 
-	NcursesRenew();
-
 	do {
+		/* debug
 		getyx(body, gety, getx);
 
 		mvprintw(maxy - 10, maxx - 30, 
@@ -568,6 +579,7 @@ void NcursesOther(Connection *conn, const char *file)
 		mvprintw(maxy - 10, maxx - 30, 
 				"\ny = %d\nx = %d\ndown = %d\n", y, x, down);
 		refresh();
+		*/
 
 		prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
 		input = getchar();
@@ -594,10 +606,10 @@ void NcursesOther(Connection *conn, const char *file)
 				if (y != 0) y--;
 				selection--;
 				NcursesReload();
-				if (y == 0) down--;
+				if ((y == 0) && (down != 0)) down--;
 				if (selection < 0) {
 					selection = (lscount) - 1;
-					y = (lscount) / 2;
+					y = (lscount + 1) / 2;
 					down = (lscount) / 2;
 				}
 				NcursesBrowse(&selection);
@@ -612,7 +624,8 @@ void NcursesOther(Connection *conn, const char *file)
 		}
 	} while (input != 'q');
 
-	NcursesRefresh(conn);
+	//NcursesRefresh(conn);
+	NcursesReload();
 	prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
 }
 
