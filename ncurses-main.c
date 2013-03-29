@@ -556,10 +556,11 @@ void NcursesBrowse(int *selection)
 
 void NcursesOther(Connection *conn, const char *file)
 {
-	Connection *newdb, *createdb;
+	Connection *olddb, *newdb, *createdb;
 	int y, x;
 	int dbsize = 10;
 	int selection = 0;
+	int signature;
 	y = 0;
 	x = 0;
 	down = 0;
@@ -567,6 +568,9 @@ void NcursesOther(Connection *conn, const char *file)
 	char action;
 	char create_buf[MAX_DATA];
 	char *arg1;
+	FILE *checksig;
+
+	olddb = conn;
 
 	getyx(body, gety, getx);
 
@@ -602,18 +606,34 @@ void NcursesOther(Connection *conn, const char *file)
 				createdb = DatabaseLoad(arg1, &action);
 				DatabaseCreate(createdb, &dbsize);
 				DatabaseWrite(createdb, arg1);
+				DatabaseClose(createdb);
 
+				conn = olddb;
 				NcursesReset("Database has been successfully created");
 
 				noecho();
-				wmove(add, 1, 1);
-				wclrtoeol(add);
-				wmove(add, 1, 1);
-				wrefresh(add);
+				wmove(create, 1, 1);
+				wclrtoeol(create);
+				wmove(create, 1, 1);
+				wrefresh(create);
 				NcursesReload();
 				break;
 
 			case 'e':
+
+				checksig = fopen(lsbuf[selection], "r+");
+				if (checksig == NULL) {
+					NcursesReset("ERROR 622: could not open file");
+					break;
+				}
+
+				// check signature
+				fread(&signature, sizeof(int), 1, checksig);
+				if (signature != 53281) {
+					NcursesReset("ERROR 127: db file not weno");
+					break;
+				}
+
 				DatabaseClose(conn);
 				action = 'C';
 				newdb = DatabaseLoad(lsbuf[selection], &action);
