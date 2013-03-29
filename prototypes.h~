@@ -110,4 +110,6 @@ void NcursesBrowse(int *selection);
 
 void NcursesRenew();
 
-void NcursesRefresh2();
+void NcursesReload();
+
+void NcursesInfo();

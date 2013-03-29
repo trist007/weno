@@ -86,6 +86,7 @@ void NcursesCenter(WINDOW *win, int row, const char *title)
 
 void NcursesUsage()
 {
+	NcursesInfo("Mode: Usage");
 	touchwin(border_usage);
 	wrefresh(border_usage);
 	touchwin(usage);
@@ -116,6 +117,7 @@ void NcursesConsole(Connection *conn, const char *file)
 	echo();
 
 	do {
+		NcursesInfo("Mode: Console");
 		wmove(body, 0, 0);
 		werase(body);
 		DatabaseList(conn, body);
@@ -245,6 +247,7 @@ void NcursesControl(Connection *conn, const char *file)
 
 	// user input
 	do {
+		NcursesInfo("Mode: Master");
 		input = getchar();
 
 		switch(input) {
@@ -305,8 +308,8 @@ void NcursesExamine(Connection *conn, const char *file)
 	int *delete_index = &(conn->core->cnf->delete_index);
 	int *size = &(conn->core->cnf->size);
 
-
 	do {
+		NcursesInfo("Mode: Examine");
 		/* debug
 		   getyx(body, gety, getx);
 
@@ -575,6 +578,7 @@ void NcursesOther(Connection *conn, const char *file)
 	getyx(body, gety, getx);
 
 	do {
+		NcursesInfo("Mode: Select/Create");
 		/* debug
 		   getyx(body, gety, getx);
 
@@ -616,12 +620,6 @@ void NcursesOther(Connection *conn, const char *file)
 				wclrtoeol(create);
 				wmove(create, 1, 1);
 				wrefresh(create);
-/*
-				wmove(add, 1, 1);
-				wclrtoeol(add);
-				wmove(add, 1, 1);
-				wrefresh(add);
-				*/
 				NcursesReload();
 				break;
 
@@ -680,10 +678,10 @@ void NcursesOther(Connection *conn, const char *file)
 				break;
 		}
 	} while (input != 'q');
+	NcursesRefresh(conn);
 	touchwin(body);
 	wrefresh(body);
-	//NcursesRefresh(conn);
-	//prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
+	prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
 }
 
 void NcursesResize(Connection *conn, const char *file)
@@ -759,7 +757,10 @@ void NcursesResize(Connection *conn, const char *file)
 
 	// usage window
 	//border_usage = newwin((maxy / 2) - 5, maxx / 2, 
-	border_usage = newwin((maxy / 2) + 1, maxx / 2 + 13, 
+	/*border_usage = newwin((maxy / 2) + 1, maxx / 2 + 13, 
+			(maxy / 4) - 4, (maxx / 4) - 6);
+	*/
+	border_usage = newwin((maxy / 2) - 1, maxx / 2 + 13, 
 			(maxy / 4) - 4, (maxx / 4) - 6);
 	if (border_usage == NULL) {
 		addstr("Unable to allocate memory for border usage window");
@@ -771,7 +772,10 @@ void NcursesResize(Connection *conn, const char *file)
 	wbkgd(border_usage, COLOR_PAIR(3));
 	box(border_usage, '|', '=');
 
-	usage = newwin((maxy / 2) - 1, (maxx / 2) + 11, 
+	/*usage = newwin((maxy / 2) - 1, (maxx / 2) + 11, 
+			(maxy / 4) - 3, (maxx / 4) - 5);
+	*/
+	usage = newwin((maxy / 2) - 3, (maxx / 2) + 11, 
 			(maxy / 4) - 3, (maxx / 4) - 5);
 	if (usage == NULL) {
 		addstr("Unable to allocate memory for usage window");
@@ -893,3 +897,11 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	printf("weno??\n");
 }
 
+void NcursesInfo(const char *message)
+{
+	move(maxy - 2, 1);
+	clrtoeol();
+	mvprintw(maxy - 2, 1, "%s", message);
+	mvprintw(maxy - 2, maxx - 17, "Press ? for help");
+	refresh();
+}

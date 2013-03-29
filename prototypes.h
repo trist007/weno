@@ -111,3 +111,5 @@ void NcursesBrowse(int *selection);
 void NcursesRenew();
 
 void NcursesReload();
+
+void NcursesInfo(const char *message);
