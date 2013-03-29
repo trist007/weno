@@ -14,6 +14,7 @@
 #include <string.h>
 #include <signal.h>
 #include <ncurses.h>
+#include <dirent.h>
 #include "prototypes.h"
 
 #define MAX_DATA 32
@@ -522,32 +523,26 @@ void NcursesReload()
 
 void NcursesRenew()
 {
-	int i;
-	FILE *ls_output;
-	FILE *ls_count;
-	char count_buf[8];
-	char buf[256];
+	int i = 0;
+	lscount = 0;
 
-	wmove(body, 0, 0);
-	werase(body);
+	struct dirent **namelist;
+	int n;
 
-	system("/usr/bin/ls -a ~/dev/desk/weno > /tmp/weno");
-	system("/usr/bin/ls -a ~/dev/desk/weno | /usr/bin/wc -l > /tmp/weno_count");
+	n = scandir("/home/rgonzale/dev/desk/weno", &namelist, 0, alphasort);
+	lscount = n;
+	if (n < 0)
+		perror("scandir");
+	else {
+		while (n--) {
+			wprintw(body, "%s\n", namelist[i]->d_name);
+			strncpy(lsbuf[n], namelist[n]->d_name, MAX_DATA);
+			free(namelist[n]);
+			i++;
+		}
+		free(namelist);
+	}
 
-	ls_output = fopen("/tmp/weno", "r");
-	fread(buf, 1, 256, ls_output);
-
-	ls_count = fopen("/tmp/weno_count", "r");
-	fread(count_buf, 8, 1, ls_count);
-	lscount = atoi(count_buf);
-
-	ls_buf[0] = strtok(buf, "\n");
-	for (i = 1; i < lscount; i++)
-		ls_buf[i] = strtok(NULL, "\n");
-	for (i = 0; i < lscount; i++)
-		strncpy(lsbuf[i], ls_buf[i], 32);
-	for (i = 0; i < lscount; i++)
-		wprintw(body, "%s\n", lsbuf[i]);
 }
 
 void NcursesBrowse(int *selection)
@@ -871,3 +866,4 @@ void DatabaseNcurses(Connection *conn, const char *file)
 
 	printf("weno??\n");
 }
+
