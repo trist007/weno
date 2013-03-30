@@ -96,20 +96,22 @@ void NcursesConsole(Connection *conn, const char *file);
 
 void NcursesExamine(Connection *conn, const char *file);
 
-void NcursesSelection(int *selection, Connection *conn);
+void ExamineSelection(int *selection, Connection *conn);
 
 void NcursesResize(Connection *conn, const char *file);
 
-void NcursesReset(const char *message);
+void DisplayError(const char *message);
 
-void NcursesRefresh(Connection *conn);
+void RefreshdbList(Connection *conn);
 
-void NcursesOther(Connection *conn, const char *file);
+void NcursesOtherdb(Connection *conn, const char *file);
 
-void NcursesBrowse(int *selection);
+void OtherdbSelection(int *selection);
 
-void NcursesRenew();
+void OtherdbListing();
 
-void NcursesReload();
+void ReloadListing();
 
-void NcursesInfo(const char *message);
+void DisplayMode(const char *message);
+
+void ClearLine(WINDOW *win);

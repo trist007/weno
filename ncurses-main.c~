@@ -27,7 +27,7 @@ char help[] = {"[Master modes]\n"
 	" c - console, type in commands\n"
 		" e - examine, add/delete highlighted index\n"
 		" n - encrypt/decrypt, <Coming Soon!>\n"
-		" o - select/create other databases\n"
+		" o - otherdb, other databases\n"
 		" q = quit program\n"
 		" r = resize ncurses\n\n"
 
@@ -36,11 +36,11 @@ char help[] = {"[Master modes]\n"
 		"a - add_record, <index> <name> <phone>, if index is "
 		"omitted record added to next available index\n "
 		"A - arrange, gets rid of the empty slots\n "
-		"c - create, new db, only in select/create mode\n "
+		"c - create, new db, only in otherdb mode\n "
 		"d - delete_record, <index>, if omitted last record "
 		"deleted\n "
 		"D - delete_insert, <index>, delete and shift\n "
-		"e - execute, load db, only in select/create mode\n "
+		"e - execute, load db, only in otherdb mode\n "
 		"I - insert, <index>, insert record and shift\n "
 		"f - find, <name>\n "
 		"p - phone, <index>, dials number, <Coming Soon!>\n "
@@ -48,7 +48,7 @@ char help[] = {"[Master modes]\n"
 		"r - resize <newsize>\n "
 		"s - sort, sorts alphabetically, best to arrange first"};
 
-// global variables used by NcursesExamine and NcursesOther
+// global variables used by NcursesExamine and NcursesOtherdb
 int gety, getx;
 
 // global variables for DatabaseExamine
@@ -86,7 +86,7 @@ void NcursesCenter(WINDOW *win, int row, const char *title)
 
 void NcursesUsage()
 {
-	NcursesInfo("Mode: Usage");
+	DisplayMode("Mode: Usage");
 	touchwin(border_usage);
 	wrefresh(border_usage);
 	touchwin(usage);
@@ -117,7 +117,7 @@ void NcursesConsole(Connection *conn, const char *file)
 	echo();
 
 	do {
-		NcursesInfo("Mode: Console");
+		DisplayMode("Mode: Console");
 		wmove(body, 0, 0);
 		werase(body);
 		DatabaseList(conn, body);
@@ -129,26 +129,23 @@ void NcursesConsole(Connection *conn, const char *file)
 		arg3 = strtok(NULL, " ");
 		arg4 = strtok(NULL, " ");
 
-		wmove(console, 1, 1);
-		wclrtoeol(console);
-		wmove(console, 1, 1);
-		wrefresh(console);
+		NcursesClear(console);
 
 		if (arg1 != NULL) {
 
 			if (strncmp(arg1, "add", 1) == 0) {
 				if (arg4 == NULL) {
 					if ((arg2 == NULL) || (arg3 == NULL)) {
-						NcursesReset("name or phone is empty\n");
+						DisplayError("name or phone is empty\n");
 					} else
 						AddRecord(conn, NULL, arg2, arg3);
 				} else {
 					int i = atoi(arg2);
 					if (i > *size || i < 0) {
-						NcursesReset("index out of bounds\n");
+						DisplayError("index out of bounds\n");
 					} else {
 						if ((arg3 == NULL) || (arg4 == NULL)) {
-							NcursesReset("name or phone is empty\n");
+							DisplayError("name or phone is empty\n");
 						} else {
 							AddRecord(conn, &i, arg3, arg4);
 						}
@@ -162,7 +159,7 @@ void NcursesConsole(Connection *conn, const char *file)
 				} else {
 					int i = atoi(arg2);
 					if (i > *size || i < 0) {
-						NcursesReset("index out of bounds\n");
+						DisplayError("index out of bounds\n");
 					} else {
 						AddInsert(conn, &i, arg3, arg4);
 					}
@@ -171,7 +168,7 @@ void NcursesConsole(Connection *conn, const char *file)
 			}
 			if (strncmp(arg1, "delete", 1) == 0) {
 				if (*free_index == 0 && *delete_index == 0) {
-					NcursesReset("database is already empty\n");
+					DisplayError("database is already empty\n");
 				} else if (arg2 == NULL) {
 					DeleteRecord(conn, NULL);
 				} else {
@@ -182,7 +179,7 @@ void NcursesConsole(Connection *conn, const char *file)
 			}
 			if (strncmp(arg1, "Delete", 1) == 0) {
 				if (*free_index == 0 && *delete_index == 0) {
-					NcursesReset("database is already empty\n");
+					DisplayError("database is already empty\n");
 				} else if (arg2 == NULL) {
 					DeleteInsert(conn, NULL);
 				} else {
@@ -194,9 +191,9 @@ void NcursesConsole(Connection *conn, const char *file)
 			if (strncmp(arg1, "resize", 1) == 0) {
 				int i = atoi(arg2);
 				if (i == *size) {
-					NcursesReset("database size is already that size\n");
+					DisplayError("database size is already that size\n");
 				} else if (i <= *free_index || i <= (*delete_index) + 1) {
-					NcursesReset("cannot resize below valid records\n");
+					DisplayError("cannot resize below valid records\n");
 				} else {
 					DatabaseResize(conn, &i);
 					DatabaseWrite(conn, file);
@@ -247,7 +244,7 @@ void NcursesControl(Connection *conn, const char *file)
 
 	// user input
 	do {
-		NcursesInfo("Mode: Master");
+		DisplayMode("Mode: Master");
 		input = getchar();
 
 		switch(input) {
@@ -260,24 +257,24 @@ void NcursesControl(Connection *conn, const char *file)
 				break;
 
 			case 'e':
-				NcursesRefresh(conn);
+				RefreshdbList(conn);
 				if (has_colors() == TRUE)
 					wattron(body, A_REVERSE);
-				mvwprintw(body, 0, 0, "%d %s %s", rows[0].index,
+				mvwprintw(body, 0, 0, "%-2d %-10s %-10s", rows[0].index,
 						rows[0].name, rows[0].phone);
 				PREFRESH;
 				NcursesExamine(conn, file);
 				break;
 
 			case 'o':
-				NcursesReload();
+				ReloadListing();
 				touchwin(body);
 				wrefresh(body);
 				if (has_colors() == TRUE)
 					wattron(body, A_REVERSE);
 				mvwprintw(body, 0, 0, "%s", lsbuf[0]);
 				PREFRESH;
-				NcursesOther(conn, file);
+				NcursesOtherdb(conn, file);
 				break;
 
 			case 'r':
@@ -292,24 +289,17 @@ void NcursesControl(Connection *conn, const char *file)
 
 void NcursesExamine(Connection *conn, const char *file)
 {
-	int y, x;
-	y = 0;
-	x = 0;
-	down = 0;
-	int selection;
+	int y = 0, down = 0, selection = 0; 
 	int input;
 	char examine_buf[MAX_DATA];
-
 	char *arg1, *arg2;
-
-	selection = 0;
 
 	int *free_index = &(conn->core->cnf->free_index);
 	int *delete_index = &(conn->core->cnf->delete_index);
 	int *size = &(conn->core->cnf->size);
 
 	do {
-		NcursesInfo("Mode: Examine");
+		DisplayMode("Mode: Examine");
 		/* debug
 		   getyx(body, gety, getx);
 
@@ -338,17 +328,14 @@ void NcursesExamine(Connection *conn, const char *file)
 				arg1 = strtok(examine_buf, " ");
 				arg2 = strtok(NULL, " ");
 				if ((arg1 == NULL) || (arg2 == NULL)) {
-					NcursesReset("name or phone is empty\n");
+					DisplayError("name or phone is empty\n");
 				} else {
 					AddRecord(conn, &selection, arg1, arg2);
 					DatabaseWrite(conn, file);
 				}
 				noecho();
-				wmove(add, 1, 1);
-				wclrtoeol(add);
-				wmove(add, 1, 1);
-				wrefresh(add);
-				NcursesRefresh(conn);
+				NcursesClear(add);
+				RefreshdbList(conn);
 				break;
 
 			case 'I':
@@ -365,23 +352,20 @@ void NcursesExamine(Connection *conn, const char *file)
 					DatabaseWrite(conn, file);
 				}
 				noecho();
-				wmove(add, 1, 1);
-				wclrtoeol(add);
-				wmove(add, 1, 1);
-				wrefresh(add);
-				NcursesRefresh(conn);
+				NcursesClear(add);
+				RefreshdbList(conn);
 				break;
 
 			case 'd':
 				DeleteRecord(conn, &selection);
 				DatabaseWrite(conn, file);
-				NcursesRefresh(conn);
+				RefreshdbList(conn);
 				break;
 
 			case 'D':
 				DeleteInsert(conn, &selection);
 				DatabaseWrite(conn, file);
-				NcursesRefresh(conn);
+				RefreshdbList(conn);
 				break;
 
 			case 'f':
@@ -400,11 +384,8 @@ void NcursesExamine(Connection *conn, const char *file)
 					getch();
 				}
 				noecho();
-				wmove(find, 1, 1);
-				wclrtoeol(find);
-				wmove(find, 1, 1);
-				wrefresh(find);
-				NcursesRefresh(conn);
+				NcursesClear(find);
+				RefreshdbList(conn);
 				break;
 
 
@@ -413,28 +394,28 @@ void NcursesExamine(Connection *conn, const char *file)
 				if (y != (maxy / 2) + 3) y++;
 				wmove(body, y, 0);
 				selection++;
-				NcursesRefresh(conn);
+				RefreshdbList(conn);
 				if (y == (maxy / 2) + 3) down++;
 				if (selection > (*size) - 1) {
 					selection = 0;
 					y = 0;
 					down = 0;
 				}
-				NcursesSelection(&selection, conn);
+				ExamineSelection(&selection, conn);
 				break;
 
 				//case KEY_UP:
 			case 'k':
 				if (y != 0) y--;
 				selection--;
-				NcursesRefresh(conn);
+				RefreshdbList(conn);
 				if ((y == 0) && (down != 0)) down--;
 				if (selection < 0) {
 					selection = (*size) - 1;
 					y = (*size) / 2;
 					down = (*size) / 2;
 				}
-				NcursesSelection(&selection, conn);
+				ExamineSelection(&selection, conn);
 				break;
 
 			case 'r':
@@ -448,32 +429,29 @@ void NcursesExamine(Connection *conn, const char *file)
 				if (arg1) {
 					int i = atoi(arg1);
 					if (i == *size) {
-						NcursesReset("database size is already that size\n");
+						DisplayError("database size is already that size\n");
 					} else if (i <= *free_index || i <= (*delete_index) + 1) {
-						NcursesReset("cannot resize below valid records\n");
+						DisplayError("cannot resize below valid records\n");
 					} else {
 						DatabaseResize(conn, &i);
 						DatabaseWrite(conn, file);
 					}
 				}
 				noecho();
-				wmove(resize, 1, 1);
-				wclrtoeol(resize);
-				wmove(resize, 1, 1);
-				wrefresh(resize);
-				NcursesRefresh(conn);
+				NcursesClear(resize);
+				RefreshdbList(conn);
 				break;
 
 			case 'A':
 				DatabaseArrange(conn);
 				DatabaseWrite(conn, file);
-				NcursesRefresh(conn);
+				RefreshdbList(conn);
 				break;
 
 			case 's':
 				DatabaseSort(conn);
 				DatabaseWrite(conn, file);
-				NcursesRefresh(conn);
+				RefreshdbList(conn);
 				break;
 
 			default:
@@ -482,24 +460,24 @@ void NcursesExamine(Connection *conn, const char *file)
 
 	} while (input != 'q');
 
-	NcursesRefresh(conn);
+	RefreshdbList(conn);
 	PREFRESH_SCROLL;
 }
 
-void NcursesSelection(int *selection, Connection *conn)
+void ExamineSelection(int *selection, Connection *conn)
 {
 	struct Information *rows = conn->core->db->rows;
 
 	if (has_colors() == TRUE)
 		wattron(body, A_REVERSE);
-	mvwprintw(body, *selection, 0, "%d %s %s", rows[*selection].index,
+	mvwprintw(body, *selection, 0, "%-2d %-10s %-10s", rows[*selection].index,
 			rows[*selection].name, rows[*selection].phone);
 	touchwin(body);
 	PREFRESH_SCROLL;
 
 }
 
-void NcursesReset(const char *message)
+void DisplayError(const char *message)
 {
 	wmove(body, 0, 0);
 	werase(body);
@@ -508,7 +486,7 @@ void NcursesReset(const char *message)
 	getch();
 }
 
-void NcursesRefresh(Connection *conn)
+void RefreshdbList(Connection *conn)
 {
 	wmove(body, 0, 0);
 	werase(body);
@@ -516,15 +494,32 @@ void NcursesRefresh(Connection *conn)
 	DatabaseList(conn, body);
 }
 
-void NcursesReload()
+void ReloadListing()
 {
 	wmove(body, 0, 0);
 	werase(body);
 	wattroff(body, A_REVERSE);
-	NcursesRenew();
+	OtherdbListing();
 }
 
-void NcursesRenew()
+void DisplayMode(const char *message)
+{
+	move(maxy - 2, 1);
+	clrtoeol();
+	mvprintw(maxy - 2, 1, "%s", message);
+	mvprintw(maxy - 2, maxx - 17, "Press ? for help");
+	refresh();
+}
+
+void NcursesClear(WINDOW *win)
+{
+	wmove(win, 1, 1);
+	wclrtoeol(win);
+	wmove(win, 1, 1);
+	wrefresh(win);
+}
+
+void OtherdbListing()
 {
 	int i = 0;
 	lscount = 0;
@@ -545,10 +540,9 @@ void NcursesRenew()
 		}
 		free(namelist);
 	}
-
 }
 
-void NcursesBrowse(int *selection)
+void OtherdbSelection(int *selection)
 {
 	if (has_colors() == TRUE)
 		wattron(body, A_REVERSE);
@@ -557,17 +551,12 @@ void NcursesBrowse(int *selection)
 	PREFRESH_SCROLL;
 }
 
-void NcursesOther(Connection *conn, const char *file)
+void NcursesOtherdb(Connection *conn, const char *file)
 {
 	Connection *olddb, *newdb, *createdb;
-	int y, x;
+	int y = 0, down = 0, selection = 0;
 	int dbsize = 10;
-	int selection = 0;
-	int signature;
-	y = 0;
-	x = 0;
-	down = 0;
-	int input;
+	int signature, input;
 	char action;
 	char create_buf[MAX_DATA];
 	char *arg1;
@@ -578,7 +567,7 @@ void NcursesOther(Connection *conn, const char *file)
 	getyx(body, gety, getx);
 
 	do {
-		NcursesInfo("Mode: Select/Create");
+		DisplayMode("Mode: Otherdb");
 		/* debug
 		   getyx(body, gety, getx);
 
@@ -613,36 +602,33 @@ void NcursesOther(Connection *conn, const char *file)
 				DatabaseClose(createdb);
 
 				conn = olddb;
-				NcursesReset("Database has been successfully created");
+				DisplayError("Database has been successfully created");
 
 				noecho();
-				wmove(create, 1, 1);
-				wclrtoeol(create);
-				wmove(create, 1, 1);
-				wrefresh(create);
-				NcursesReload();
+				NcursesClear(create);
+				ReloadListing();
 				break;
 
 			case 'e':
 
 				checksig = fopen(lsbuf[selection], "r+");
 				if (checksig == NULL) {
-					NcursesReset("ERROR 622: could not open file");
+					DisplayError("ERROR 622: could not open file");
 					break;
 				}
 
 				// check signature
 				fread(&signature, sizeof(int), 1, checksig);
 				if (signature != 53281) {
-					NcursesReset("ERROR 127: db file not weno");
+					DisplayError("ERROR 127: db file not weno");
 					break;
 				}
 
 				DatabaseClose(conn);
 				action = 'C';
 				newdb = DatabaseLoad(lsbuf[selection], &action);
-				NcursesReset("Database has been successfully loaded, exit this mode");
-				NcursesReload();
+				DisplayError("Database has been successfully loaded, exit this mode");
+				ReloadListing();
 				break;
 
 				//case KEY_DOWN:
@@ -650,38 +636,38 @@ void NcursesOther(Connection *conn, const char *file)
 				if (y != (maxy / 2) + 3) y++;
 				wmove(body, y, 0);
 				selection++;
-				NcursesReload();
+				ReloadListing();
 				if (y == (maxy / 2) + 3) down++;
 				if (selection > (lscount) - 1) {
 					selection = 0;
 					y = 0;
 					down = 0;
 				}
-				NcursesBrowse(&selection);
+				OtherdbSelection(&selection);
 				break;
 
 				//case KEY_UP:
 			case 'k':
 				if (y != 0) y--;
 				selection--;
-				NcursesReload();
+				ReloadListing();
 				if ((y == 0) && (down != 0)) down--;
 				if (selection < 0) {
 					selection = (lscount) - 1;
 					y = (lscount + 1) / 2;
 					down = (lscount) / 2;
 				}
-				NcursesBrowse(&selection);
+				OtherdbSelection(&selection);
 				break;
 
 			default:
 				break;
 		}
 	} while (input != 'q');
-	NcursesRefresh(conn);
+	RefreshdbList(conn);
 	touchwin(body);
 	wrefresh(body);
-	prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3);
+	PREFRESH;
 }
 
 void NcursesResize(Connection *conn, const char *file)
@@ -895,13 +881,4 @@ void DatabaseNcurses(Connection *conn, const char *file)
 	endwin();
 
 	printf("weno??\n");
-}
-
-void NcursesInfo(const char *message)
-{
-	move(maxy - 2, 1);
-	clrtoeol();
-	mvprintw(maxy - 2, 1, "%s", message);
-	mvprintw(maxy - 2, maxx - 17, "Press ? for help");
-	refresh();
 }

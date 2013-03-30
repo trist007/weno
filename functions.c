@@ -360,13 +360,13 @@ void DatabaseList(Connection *conn, WINDOW *win)
 
 	if (win) {
 		for (i = 0; i < conn->core->cnf->size; i++) {
-			wprintw(win, "%d %s %s\n", conn->core->db->rows[i].index, 
+			wprintw(win, "%-2d %-10s %-10s\n", conn->core->db->rows[i].index, 
 					conn->core->db->rows[i].name, 
 					conn->core->db->rows[i].phone);
 		}
 	} else {
 		for (i = 0; i < conn->core->cnf->size; i++) {
-			printf("%d %s %s\n", conn->core->db->rows[i].index, 
+			printf("%-2d %-10s %-10s\n", conn->core->db->rows[i].index, 
 					conn->core->db->rows[i].name, 
 					conn->core->db->rows[i].phone);
 		}
