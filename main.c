@@ -124,6 +124,12 @@ int main(int argc, char *argv[]) {
 			   Usage();
 			   break;
 
+		   case 'n':
+			   fprintf(stderr, "help\n");
+			   DatabaseEncrypt(conn, 'e');
+			   DatabaseWrite(conn, file);
+			   break;
+
 		   case 'S':
 			   fprintf(stderr, "shell v0.1\n");
 			   DatabaseShell(conn, file);

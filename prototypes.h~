@@ -114,4 +114,6 @@ void ReloadListing();
 
 void DisplayMode(const char *message);
 
-void NcursesClear(WINDOW *win);
+void ClearLine(WINDOW *win);
+
+void BlowFish(unsigned char *data, char action);

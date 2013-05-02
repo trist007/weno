@@ -15,10 +15,12 @@
 #include <string.h>
 #include <signal.h>
 #include <ncurses.h>
+#include <openssl/blowfish.h>
 #include "prototypes.h"
 
 #define MAX_DATA 32
 #define MAX_ROWS 10
+#define KEY_SIZE 16
 
 void die(const char *message)
 {
@@ -84,7 +86,7 @@ Connection *DatabaseLoad(const char *file, char *action)
 	int signature = 0;
 	size_t members_read = 0;
 
-	Connection *conn = calloc(1, sizeof(link));
+	Connection *conn = calloc(1, sizeof(Connection));
 	if (conn == NULL)
 		die("ERROR 86: could not calloc conn");
 
@@ -106,7 +108,7 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 	conn->core->db = db_ptr;
 
-	if (strchr("acdefhilrsACDIS", *action) == NULL) {
+	if (strchr("acdefhilnrsACDIS", *action) == NULL) {
 		die("ERROR 107: strchr could not find available action");
 
 	} else if (*action == 'c') {
@@ -665,3 +667,29 @@ void RecalculateIndexes(Connection *conn)
 		(*delete_index)--;
 }
 
+void BlowFish(Connection *conn, char *action)
+{
+	struct Information *rows = conn->core->db->rows;
+	int *size = &(conn->core->cnf->size);
+
+	unsigned char *in;
+	unsigned char *out = calloc(MAX_DATA, sizeof(char));
+	BF_KEY *key = calloc(1, sizeof(BF_KEY));
+	FILE *fkey;
+	char *keybuf[16];
+
+	fkey = fopen("~/.weno/.key", "r");
+	fread(keybuf, 16, 1, fkey);
+
+	BF_set_key(key, KEY_SIZE, (const unsigned char*)keybuf);
+
+	if (action == 'e') {
+		BF_ecb_encrypt(in, out, key, BF_ENCRYPT);
+		BF_ecb_encrypt(in + 8, out + 8, key, BF_ENCRYPT);
+	}
+
+	if (action == 'd') {
+		BF_ecb_encrypt(out, out2, key, BF_DECRYPT);
+		BF_ecb_encrypt(out + 8, out2 + 8, key, BF_DECRYPT);
+	}
+}

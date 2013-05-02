@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
 		   case 'A':
 			   fprintf(stderr, "Arrange\n");
-			   DatabaseArrange(conn, file);
+			   DatabaseArrange(conn);
 			   DatabaseWrite(conn, file);
 			   break;
 

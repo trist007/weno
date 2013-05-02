@@ -229,8 +229,6 @@ void NcursesControl(Connection *conn, const char *file)
 {
 	int input;
 
-	struct Information *rows = conn->core->db->rows;
-
 	void mysighand(int signum) {
 		if (signum == 2) {
 			waddstr(body, "Catching SIGINT\nClosing DB\n");
@@ -260,8 +258,6 @@ void NcursesControl(Connection *conn, const char *file)
 				RefreshdbList(conn);
 				if (has_colors() == TRUE)
 					wattron(body, A_REVERSE);
-				mvwprintw(body, 0, 0, "%-2d %-10s %-10s", rows[0].index,
-						rows[0].name, rows[0].phone);
 				PREFRESH;
 				NcursesExamine(conn, file);
 				break;
@@ -294,9 +290,14 @@ void NcursesExamine(Connection *conn, const char *file)
 	char examine_buf[MAX_DATA];
 	char *arg1, *arg2;
 
+	struct Information *rows = conn->core->db->rows;
+
 	int *free_index = &(conn->core->cnf->free_index);
 	int *delete_index = &(conn->core->cnf->delete_index);
 	int *size = &(conn->core->cnf->size);
+
+	mvwprintw(body, 0, 0, "%-2d %-10s %-10s", rows[0].index,
+			rows[0].name, rows[0].phone);
 
 	do {
 		DisplayMode("Mode: Examine");
@@ -744,8 +745,8 @@ void NcursesResize(Connection *conn, const char *file)
 	// usage window
 	//border_usage = newwin((maxy / 2) - 5, maxx / 2, 
 	/*border_usage = newwin((maxy / 2) + 1, maxx / 2 + 13, 
-			(maxy / 4) - 4, (maxx / 4) - 6);
-	*/
+	  (maxy / 4) - 4, (maxx / 4) - 6);
+	 */
 	border_usage = newwin((maxy / 2) - 1, maxx / 2 + 13, 
 			(maxy / 4) - 4, (maxx / 4) - 6);
 	if (border_usage == NULL) {
@@ -759,8 +760,8 @@ void NcursesResize(Connection *conn, const char *file)
 	box(border_usage, '|', '=');
 
 	/*usage = newwin((maxy / 2) - 1, (maxx / 2) + 11, 
-			(maxy / 4) - 3, (maxx / 4) - 5);
-	*/
+	  (maxy / 4) - 3, (maxx / 4) - 5);
+	 */
 	usage = newwin((maxy / 2) - 3, (maxx / 2) + 11, 
 			(maxy / 4) - 3, (maxx / 4) - 5);
 	if (usage == NULL) {
