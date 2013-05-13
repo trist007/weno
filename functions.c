@@ -669,10 +669,11 @@ void RecalculateIndexes(Connection *conn)
 
 void BlowFish(Connection *conn, char *action)
 {
+	int i, j;
 	struct Information *rows = conn->core->db->rows;
 	int *size = &(conn->core->cnf->size);
 
-	unsigned char *in;
+	unsigned char *in = calloc(MAX_DATA, sizeof(char));
 	unsigned char *out = calloc(MAX_DATA, sizeof(char));
 	BF_KEY *key = calloc(1, sizeof(BF_KEY));
 	FILE *fkey;
@@ -683,13 +684,38 @@ void BlowFish(Connection *conn, char *action)
 
 	BF_set_key(key, KEY_SIZE, (const unsigned char*)keybuf);
 
-	if (action == 'e') {
-		BF_ecb_encrypt(in, out, key, BF_ENCRYPT);
-		BF_ecb_encrypt(in + 8, out + 8, key, BF_ENCRYPT);
+	if (*action == 'e') {
+		for (i = 0; i < *size; i++) {
+			// name
+			in = rows[i].name;
+			for (j = 0; j < 4; j++) {
+				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_ENCRYPT);
+			}
+			rows[i].name = out;
+
+			// phone
+			in = rows[i].phone;
+			for (j = 0; j < 4; j++) {
+				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_ENCRYPT);
+			}
+			rows[i].phone = out;
+		}
 	}
 
-	if (action == 'd') {
-		BF_ecb_encrypt(out, out2, key, BF_DECRYPT);
-		BF_ecb_encrypt(out + 8, out2 + 8, key, BF_DECRYPT);
+	if (*action == 'd') {
+		for (i = 0; i < *size; i++) {
+			// name
+			in = rows[i].name;
+			for (j = 0; j < 4; j++) {
+				BF_ecb_encrypt(out + (j * 8), out + (j * 8), key, BF_DECRYPT);
+			}
+			rows[i].name = out;
+
+			// phone
+			in = rows[i].phone;
+			for (j = 0; j < 4; j++) {
+				BF_ecb_encrypt(out + (j * 8), out + (j * 8), key, BF_DECRYPT);
+			}
+			rows[i].phone = out;
+		}
 	}
-}

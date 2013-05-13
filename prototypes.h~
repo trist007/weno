@@ -41,8 +41,8 @@ struct Database {
 
 struct Information {
    int index;
-   char name[MAX_DATA];
-   char phone[MAX_DATA];
+   unsigned char name[MAX_DATA];
+   unsigned char phone[MAX_DATA];
 };
 
 void DatabaseCreate(Connection *conn, int *size);
@@ -116,4 +116,4 @@ void DisplayMode(const char *message);
 
 void ClearLine(WINDOW *win);
 
-void BlowFish(unsigned char *data, char action);
+void BlowFish(unsigned char *data, char *action);
