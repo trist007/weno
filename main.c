@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
 
    char *file = argv[1];
    char action = argv[2][1];
+   char action2;
 
    Connection *conn = DatabaseLoad(file, &action);
    assert(conn != NULL);
@@ -125,8 +126,16 @@ int main(int argc, char *argv[]) {
 			   break;
 
 		   case 'n':
-			   fprintf(stderr, "help\n");
-			   DatabaseEncrypt(conn, 'e');
+			   fprintf(stderr, "encrypt\n");
+			   action2 = 'e';
+			   Secrecy(conn, &action2);
+			   DatabaseWrite(conn, file);
+			   break;
+
+		   case 'x':
+			   fprintf(stderr, "decrypt\n");
+			   action2 = 'd';
+			   Secrecy(conn, &action2);
 			   DatabaseWrite(conn, file);
 			   break;
 

@@ -116,4 +116,4 @@ void DisplayMode(const char *message);
 
 void ClearLine(WINDOW *win);
 
-void BlowFish(unsigned char *data, char *action);
+void Secrecy(Connection *conn, char *action);

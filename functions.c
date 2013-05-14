@@ -108,7 +108,7 @@ Connection *DatabaseLoad(const char *file, char *action)
 
 	conn->core->db = db_ptr;
 
-	if (strchr("acdefhilnrsACDIS", *action) == NULL) {
+	if (strchr("acdefhilnrsxACDIS", *action) == NULL) {
 		die("ERROR 107: strchr could not find available action");
 
 	} else if (*action == 'c') {
@@ -667,7 +667,7 @@ void RecalculateIndexes(Connection *conn)
 		(*delete_index)--;
 }
 
-void BlowFish(Connection *conn, char *action)
+void Secrecy(Connection *conn, char *action)
 {
 	int i, j;
 	struct Information *rows = conn->core->db->rows;
@@ -677,45 +677,50 @@ void BlowFish(Connection *conn, char *action)
 	unsigned char *out = calloc(MAX_DATA, sizeof(char));
 	BF_KEY *key = calloc(1, sizeof(BF_KEY));
 	FILE *fkey;
-	char *keybuf[16];
+	char keybuf[16];
+	bzero(keybuf, 16);
 
-	fkey = fopen("~/.weno/.key", "r");
-	fread(keybuf, 16, 1, fkey);
+	fkey = fopen("/home/rgonzale/.weno/.key", "r");
+	if (fkey == NULL) {
+		fprintf(stderr, "Unable to open file");
+		exit(1);
+	}
+	fread(keybuf, 1, 16, fkey);
 
-	BF_set_key(key, KEY_SIZE, (const unsigned char*)keybuf);
+	BF_set_key(key, KEY_SIZE, (const unsigned char *)keybuf);
 
 	if (*action == 'e') {
 		for (i = 0; i < *size; i++) {
-			// name
-			in = rows[i].name;
+			strncpy(in, rows[i].name, MAX_DATA);
 			for (j = 0; j < 4; j++) {
 				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_ENCRYPT);
 			}
-			rows[i].name = out;
+			strncpy(rows[i].name, out, MAX_DATA);
 
-			// phone
-			in = rows[i].phone;
+			strncpy(in, rows[i].phone, MAX_DATA);
 			for (j = 0; j < 4; j++) {
 				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_ENCRYPT);
 			}
-			rows[i].phone = out;
+			strncpy(rows[i].phone, out, MAX_DATA);
 		}
 	}
 
 	if (*action == 'd') {
 		for (i = 0; i < *size; i++) {
-			// name
-			in = rows[i].name;
+			strncpy(in, rows[i].name, MAX_DATA);
 			for (j = 0; j < 4; j++) {
-				BF_ecb_encrypt(out + (j * 8), out + (j * 8), key, BF_DECRYPT);
+				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_DECRYPT);
 			}
-			rows[i].name = out;
+			strncpy(rows[i].name, out, MAX_DATA);
 
-			// phone
-			in = rows[i].phone;
+			strncpy(in, rows[i].phone, MAX_DATA);
 			for (j = 0; j < 4; j++) {
-				BF_ecb_encrypt(out + (j * 8), out + (j * 8), key, BF_DECRYPT);
+				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_DECRYPT);
 			}
-			rows[i].phone = out;
+			strncpy(rows[i].phone, out, MAX_DATA);
 		}
 	}
+	free(key);
+	free(in);
+	free(out);
+}
