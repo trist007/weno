@@ -1,3 +1,5 @@
+* requires ncurses-libs and ncurses-devel
+
 Make sure to generate a 16-bit key for encrypt/decrypt functions in place in
 ~/.weno/.key
 
