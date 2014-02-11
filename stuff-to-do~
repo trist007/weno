@@ -1,3 +1,7 @@
+encryption blowfish
+enrypt when invoke databaseclose
+decrypt when invoke databaseload
+put 16 byte key in ~/.weno/.key
 show database name below mode
 change databasecreate to operate without Conn so when add new database\
 		   doesn't have to encrypt/decrypt

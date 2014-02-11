@@ -1,0 +1,4 @@
+Make sure to generate a 16-bit key for encrypt/decrypt functions in place in
+~/.weno/.key
+
+Set permissions for .key to 400 and .weno to 700

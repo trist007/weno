@@ -53,8 +53,10 @@ void Usage()
 			"0 via stdin\n"
 			"-I insert, <index>, insert record and shift\n"
 			"-l list\n"
+			"-n encrypt\n"
 			"-r resize <newsize>\n"
 			"-s sort, good to run Arrange first\n"
+			"-x decrypt\n"
 			"-S shell\n");
 }
 
@@ -680,9 +682,9 @@ void Secrecy(Connection *conn, char *action)
 	char keybuf[16];
 	bzero(keybuf, 16);
 
-	fkey = fopen("/home/rgonzale/.weno/.key", "r");
+	fkey = fopen("/home/rgonzale/dev/desk/weno/.weno/.key", "r");
 	if (fkey == NULL) {
-		fprintf(stderr, "Unable to open file");
+		fprintf(stderr, "Unable to open ~/.weno/.key file");
 		exit(1);
 	}
 	fread(keybuf, 1, 16, fkey);
@@ -691,33 +693,33 @@ void Secrecy(Connection *conn, char *action)
 
 	if (*action == 'e') {
 		for (i = 0; i < *size; i++) {
-			strncpy(in, rows[i].name, MAX_DATA);
+			strncpy((char *)in, rows[i].name, MAX_DATA);
 			for (j = 0; j < 4; j++) {
 				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_ENCRYPT);
 			}
-			strncpy(rows[i].name, out, MAX_DATA);
+			strncpy(rows[i].name, (char *)out, MAX_DATA);
 
-			strncpy(in, rows[i].phone, MAX_DATA);
+			strncpy((char *)in, rows[i].phone, MAX_DATA);
 			for (j = 0; j < 4; j++) {
-				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_ENCRYPT);
+				BF_ecb_encrypt((unsigned char *)in + (j * 8), (unsigned char *)out + (j * 8), key, BF_ENCRYPT);
 			}
-			strncpy(rows[i].phone, out, MAX_DATA);
+			strncpy(rows[i].phone, (char *)out, MAX_DATA);
 		}
 	}
 
 	if (*action == 'd') {
 		for (i = 0; i < *size; i++) {
-			strncpy(in, rows[i].name, MAX_DATA);
+			strncpy((char *)in, rows[i].name, MAX_DATA);
 			for (j = 0; j < 4; j++) {
 				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_DECRYPT);
 			}
-			strncpy(rows[i].name, out, MAX_DATA);
+			strncpy(rows[i].name, (char *)out, MAX_DATA);
 
-			strncpy(in, rows[i].phone, MAX_DATA);
+			strncpy((char *)in, rows[i].phone, MAX_DATA);
 			for (j = 0; j < 4; j++) {
-				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_DECRYPT);
+				BF_ecb_encrypt((unsigned char *)in + (j * 8), (unsigned char *)out + (j * 8), key, BF_DECRYPT);
 			}
-			strncpy(rows[i].phone, out, MAX_DATA);
+			strncpy(rows[i].phone, (char *)out, MAX_DATA);
 		}
 	}
 	free(key);

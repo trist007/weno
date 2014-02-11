@@ -51,11 +51,11 @@ struct Connection *DatabaseLoad(const char *file, char *action);
 
 void DatabaseClose(Connection *conn);
 
-void AddRecord(Connection *conn, int *index, const char *name, const char *phone);
+void AddRecord(Connection *conn, int *index, const unsigned char *name, const unsigned char *phone);
 
 void DeleteRecord(Connection *conn, int *index);
 
-void AddInsert(Connection *conn, int *index, const char *name, const char *phone);
+void AddInsert(Connection *conn, int *index, const unsigned char *name, const unsigned char *phone);
 
 void DeleteInsert(Connection *conn, int *index);
 
@@ -69,7 +69,7 @@ void DatabaseResize(Connection *conn, int *newsize);
 
 void DatabaseImport(Connection *conn);
 
-void DatabaseFind(Connection *conn, char *name,	WINDOW *win);
+void DatabaseFind(Connection *conn, unsigned char *name, WINDOW *win);
 
 void DatabaseExport(Connection *conn);
 

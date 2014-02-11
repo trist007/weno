@@ -1,12 +1,12 @@
 rm db
-main db -c
-main db -a trist 555
-main db -a vito 555
-main db -a randy 555
-main db -a ally 555
-main db -a sarah 555
-main db -a sick 555
-main db -a sick 555
-main db -a sick 555
-main db -a sick 555
-main db -a sick 555
+./main db -c
+./main db -a trist 555
+./main db -a vito 555
+./main db -a randy 555
+./main db -a ally 555
+./main db -a sarah 555
+./main db -a sick 555
+./main db -a sick 555
+./main db -a sick 555
+./main db -a sick 555
+./main db -a sick 555

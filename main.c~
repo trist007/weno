@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 		   case 'a':
 			   fprintf(stderr, "add\n");
 			   if (argc == 5)
-				   AddRecord(conn, NULL, argv[3], argv[4]);
+				   AddRecord(conn, NULL, (unsigned char)argv[3], (unsigned char)argv[4]);
 			   else
 				   AddRecord(conn, &index, argv[4], argv[5]);
 
@@ -126,14 +126,14 @@ int main(int argc, char *argv[]) {
 			   break;
 
 		   case 'n':
-			   fprintf(stderr, "help\n");
+			   fprintf(stderr, "encrypt\n");
 			   action2 = 'e';
 			   Secrecy(conn, &action2);
 			   DatabaseWrite(conn, file);
 			   break;
 
 		   case 'x':
-			   fprintf(stderr, "help\n");
+			   fprintf(stderr, "decrypt\n");
 			   action2 = 'd';
 			   Secrecy(conn, &action2);
 			   DatabaseWrite(conn, file);

@@ -691,33 +691,33 @@ void Secrecy(Connection *conn, char *action)
 
 	if (*action == 'e') {
 		for (i = 0; i < *size; i++) {
-			strncpy(in, rows[i].name, MAX_DATA);
+			strncpy((char *)in, rows[i].name, MAX_DATA);
 			for (j = 0; j < 4; j++) {
 				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_ENCRYPT);
 			}
-			strncpy(rows[i].name, out, MAX_DATA);
+			strncpy(rows[i].name, (char *)out, MAX_DATA);
 
-			strncpy(in, rows[i].phone, MAX_DATA);
+			strncpy((char *)in, rows[i].phone, MAX_DATA);
 			for (j = 0; j < 4; j++) {
-				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_ENCRYPT);
+				BF_ecb_encrypt((unsigned char *)in + (j * 8), (unsigned char *)out + (j * 8), key, BF_ENCRYPT);
 			}
-			strncpy(rows[i].phone, out, MAX_DATA);
+			strncpy(rows[i].phone, (char *)out, MAX_DATA);
 		}
 	}
 
 	if (*action == 'd') {
-		for (i = 0; i < 20; i++) {
-			strncpy(in, rows[i].name, MAX_DATA);
+		for (i = 0; i < *size; i++) {
+			strncpy((char *)in, rows[i].name, MAX_DATA);
 			for (j = 0; j < 4; j++) {
 				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_DECRYPT);
 			}
-			strncpy(rows[i].name, out, MAX_DATA);
+			strncpy(rows[i].name, (char *)out, MAX_DATA);
 
-			strncpy(in, rows[i].phone, MAX_DATA);
+			strncpy((char *)in, rows[i].phone, MAX_DATA);
 			for (j = 0; j < 4; j++) {
-				BF_ecb_encrypt(in + (j * 8), out + (j * 8), key, BF_DECRYPT);
+				BF_ecb_encrypt((unsigned char *)in + (j * 8), (unsigned char *)out + (j * 8), key, BF_DECRYPT);
 			}
-			strncpy(rows[i].phone, out, MAX_DATA);
+			strncpy(rows[i].phone, (char *)out, MAX_DATA);
 		}
 	}
 	free(key);

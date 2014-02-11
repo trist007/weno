@@ -69,7 +69,7 @@ void DatabaseResize(Connection *conn, int *newsize);
 
 void DatabaseImport(Connection *conn);
 
-void DatabaseFind(Connection *conn, char *name,	WINDOW *win);
+void DatabaseFind(Connection *conn, char *name, WINDOW *win);
 
 void DatabaseExport(Connection *conn);
 
