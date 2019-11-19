@@ -15,12 +15,16 @@
 #include <signal.h>
 #include <ncurses.h>
 #include <dirent.h>
+#include <sys/dir.h>
 #include "prototypes.h"
 
 #define MAX_DATA 32
 #define PREFRESH prefresh(body, 0, 0, 6, 2, (maxy  / 2) + 8, maxx - 3)
 #define PREFRESH_SCROLL prefresh(body, down, 0, 6, 2, (maxy  / 2) + 8, maxx - 3)
 #define SUBWINDOWS newwin(3, (maxx/3) - 2, maxy / 3, maxx / 3)
+
+// for alphasort since it is not in the C99 standard
+extern int alphasort(const void*,const void*);
 
 char banner[] = "weno shell v0.1 by Tristan Gonzalez - Copyright 2013";
 char help[] = {"[Master modes]\n"

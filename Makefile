@@ -1,4 +1,4 @@
-CFLAGS=-Wall -g3 -funsigned-char
+CFLAGS=-Wall -g3 -funsigned-char -std=c99
 
 all: main
 
