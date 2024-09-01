@@ -1,0 +1,3 @@
+[submodule "external/trantor"]
+	path = external/trantor
+	url = https://github.com/an-tao/trantor

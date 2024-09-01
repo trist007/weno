@@ -1,10 +1,39 @@
 cmake_minimum_required(VERSION 3.26)
-project(weno)
+project(
+	weno
+	VERSION 0.1.0
+	LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 			17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS 		OFF)
 
-find_library(TRANTOR_LIB
-              NAMES trantor
-              PATHS /usr/local/lib64)
-add_executable(weno main.cpp)
-target_link_libraries(weno PRIVATE ${TRANTOR_LIB})
+set(EXECUTABLE_NAME weno)
+
+option(COMPILE_EXECUTABLE "Whether to compile the executable" ON)
+
+if (COMPILE_EXECUTABLE)
+	add_executable(${COMPILE_NAME} main.cc)
+else()
+	message("W/o exe. compiling")
+endif()
+
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules/")
+include(AddGitSubmodule)
+include(FetchContent)
+
+add_git_submodule(external/trantor)
+
+FetchContent_Declare(
+	trantor
+	GIT_REPOSITORY https://github.com/an-tao/trantor
+	GIT_TAG v1.5.20
+	GIT_SHALLOW TRUE)
+
+FetchContent_MakeAvailable(trantor)
+
+if (COMPILE_EXECUTABLE)
+	target_link_libraries(${COMPILE_NAME} PUBLIC trantor)
+else()
+	message("W/o exe. compiling")
+endif()
