@@ -12,6 +12,8 @@ set(EXECUTABLE_NAME weno)
 
 option(COMPILE_EXECUTABLE "Whether to compile the executable" ON)
 
+add_subdirectory(configured)
+
 if (COMPILE_EXECUTABLE)
 	add_executable(${COMPILE_NAME} main.cc)
 else()
@@ -21,6 +23,7 @@ endif()
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules/")
 include(AddGitSubmodule)
 include(FetchContent)
+
 
 add_git_submodule(external/trantor)
 
