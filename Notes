@@ -1,0 +1,4 @@
+1. If github repo with CMakeLists.txt file then use FetchContent and make available
+   If github repo but not cmake then use git submodule and add_library
+
+2. doxygen do doxygen -g to create Doxyfile, fill it out and generate html by running doxygen

@@ -9,6 +9,12 @@
 
 using namespace trantor;
 
+/**
+ *  @brief Starts the server
+ * 
+ */
+ 
+
 int main()
 {
   LOG_DEBUG << "test start";

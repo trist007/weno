@@ -4,15 +4,13 @@ project(
 	VERSION 0.1.0
 	LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 			17)
+set(CMAKE_CXX_STANDARD 					17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS 		OFF)
+set(CMAKE_CXX_EXTENSIONS 				OFF)
 
 set(EXECUTABLE_NAME weno)
 
 option(COMPILE_EXECUTABLE "Whether to compile the executable" ON)
-
-add_subdirectory(configured)
 
 if (COMPILE_EXECUTABLE)
 	add_executable(${COMPILE_NAME} main.cc)
@@ -23,9 +21,11 @@ endif()
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules/")
 include(AddGitSubmodule)
 include(FetchContent)
-
+include(Docs)
 
 add_git_submodule(external/trantor)
+
+add_subdirectory(configured)
 
 FetchContent_Declare(
 	trantor
