@@ -13,7 +13,7 @@ set(EXECUTABLE_NAME weno)
 option(COMPILE_EXECUTABLE "Whether to compile the executable" ON)
 
 if (COMPILE_EXECUTABLE)
-	add_executable(${COMPILE_NAME} main.cc)
+	add_executable(${COMPILE_EXECUTABLE} main.cc)
 else()
 	message("W/o exe. compiling")
 endif()
@@ -36,7 +36,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(trantor)
 
 if (COMPILE_EXECUTABLE)
-	target_link_libraries(${COMPILE_NAME} PUBLIC trantor)
+	target_link_libraries(${COMPILE_EXECUTABLE} PUBLIC trantor)
 else()
 	message("W/o exe. compiling")
 endif()
