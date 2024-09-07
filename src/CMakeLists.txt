@@ -1,0 +1,6 @@
+if (COMPILE_EXECUTABLE)
+	add_executable(${EXECUTABLE_NAME} main.cc Weno.cc ../include/Weno.h)
+else()
+	message("W/o exe. compiling")
+endif()
+target_include_directories(${EXECUTABLE_NAME} PUBLIC ${PROJECT_SOURCE_DIR/include})

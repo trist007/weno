@@ -8,15 +8,18 @@ set(CMAKE_CXX_STANDARD 					17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS 				OFF)
 
-set(EXECUTABLE_NAME weno)
+set(EXECUTABLE_NAME ${PROJECT_NAME})
 
 option(COMPILE_EXECUTABLE "Whether to compile the executable" ON)
 
-if (COMPILE_EXECUTABLE)
-	add_executable(${COMPILE_EXECUTABLE} main.cc)
-else()
-	message("W/o exe. compiling")
-endif()
+add_subdirectory(src)
+#add_subdirectory(include)
+
+#if (COMPILE_EXECUTABLE)
+#	add_executable(${EXECUTABLE_NAME} ${src}/main.cc)
+#else()
+#	message("W/o exe. compiling")
+#endif()
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules/")
 include(AddGitSubmodule)
@@ -36,7 +39,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(trantor)
 
 if (COMPILE_EXECUTABLE)
-	target_link_libraries(${COMPILE_EXECUTABLE} PUBLIC trantor)
+	target_link_libraries(${EXECUTABLE_NAME} PUBLIC trantor)
 else()
 	message("W/o exe. compiling")
 endif()

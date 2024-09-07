@@ -6,6 +6,7 @@
 #include <trantor/net/EventLoopThread.h>
 #include <trantor/net/EventLoopThreadPool.h>
 #include <trantor/net/InetAddress.h>
+#include "../include/Weno.h"
 
 using namespace trantor;
 
@@ -26,9 +27,10 @@ int main()
 #else
   InetAddress addr(8888);
 #endif
-  TcpServer server(loopThread.getLoop(), addr, "test");
+  TcpServer server(loopThread.getLoop(), addr, "weno");
   server.setBeforeListenSockOptCallback([](int fd)
                                         { std::cout << "setBeforeListenSockOptCallback:" << fd << std::endl; });
+                                        weno::Chat();
   server.setAfterAcceptSockOptCallback([](int fd)
                                        { std::cout << "afterAcceptSockOptCallback:" << fd << std::endl; });
   server.setRecvMessageCallback(
