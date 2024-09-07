@@ -39,7 +39,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(trantor)
 
 if (COMPILE_EXECUTABLE)
-	target_link_libraries(${EXECUTABLE_NAME} PUBLIC trantor)
+	target_link_libraries(${EXECUTABLE_NAME}-server PUBLIC trantor)
+	target_link_libraries(${EXECUTABLE_NAME}-client PUBLIC trantor)
 else()
 	message("W/o exe. compiling")
 endif()

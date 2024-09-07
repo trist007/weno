@@ -12,7 +12,9 @@ namespace weno
        */
         Chat();
         Chat(const std::string user);
+        std::string getUser();
         ~Chat();
+    private:
         std::string m_user;
   };
 }

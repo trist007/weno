@@ -30,7 +30,7 @@ int main()
   TcpServer server(loopThread.getLoop(), addr, "weno");
   server.setBeforeListenSockOptCallback([](int fd)
                                         { std::cout << "setBeforeListenSockOptCallback:" << fd << std::endl; });
-                                        weno::Chat();
+  weno::Chat session("trist007");
   server.setAfterAcceptSockOptCallback([](int fd)
                                        { std::cout << "afterAcceptSockOptCallback:" << fd << std::endl; });
   server.setRecvMessageCallback(
@@ -42,10 +42,11 @@ int main()
         buffer->retrieveAll();
         // connectionPtr->forceClose();
       });
-  server.setConnectionCallback([](const TcpConnectionPtr &connPtr)
+  server.setConnectionCallback([&session](const TcpConnectionPtr &connPtr)
                                {
     if (connPtr->connected()) {
-      LOG_DEBUG << "New connection";
+      //std::string user = session.getUser();
+      LOG_DEBUG << "New connection from " << session.getUser();
     } else if (connPtr->disconnected()) {
       LOG_DEBUG << "connection disconnected";
     } });
