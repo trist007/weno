@@ -18,7 +18,7 @@ using namespace trantor;
 
 int main()
 {
-  LOG_DEBUG << "test start";
+  LOG_DEBUG << "weno";
   Logger::setLogLevel(Logger::kTrace);
   EventLoopThread loopThread;
   loopThread.run();
@@ -28,9 +28,11 @@ int main()
   InetAddress addr(8888);
 #endif
   TcpServer server(loopThread.getLoop(), addr, "weno");
+  //auto policy = TLSPolicy::defaultServerPolicy("server.crt", "server.key");
+  //server.enableSSL(std::move(policy));
   server.setBeforeListenSockOptCallback([](int fd)
                                         { std::cout << "setBeforeListenSockOptCallback:" << fd << std::endl; });
-  weno::Chat session("trist007");
+  weno::Server session;
   server.setAfterAcceptSockOptCallback([](int fd)
                                        { std::cout << "afterAcceptSockOptCallback:" << fd << std::endl; });
   server.setRecvMessageCallback(
@@ -45,8 +47,8 @@ int main()
   server.setConnectionCallback([&session](const TcpConnectionPtr &connPtr)
                                {
     if (connPtr->connected()) {
-      //std::string user = session.getUser();
-      LOG_DEBUG << "New connection from " << session.getUser();
+      //LOG_DEBUG << "New connection from " << session.getUser();
+      LOG_DEBUG << "New connection";
     } else if (connPtr->disconnected()) {
       LOG_DEBUG << "connection disconnected";
     } });

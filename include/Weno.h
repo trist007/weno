@@ -2,7 +2,7 @@
 namespace weno
 {
 
-  class Chat
+  class Server
   {
     public:
       /**
@@ -10,10 +10,25 @@ namespace weno
        * 
        * @param user The user name.
        */
-        Chat();
-        Chat(const std::string user);
+        Server();
+        int checkUser(std::string user);
+        ~Server();
+    private:
+        std::string m_user;
+  };
+
+  class Client
+  {
+    public:
+      /**
+       * @brief launch a new Chat.
+       * 
+       * @param user The user name.
+       */
+        Client();
+        Client(const std::string user);
         std::string getUser();
-        ~Chat();
+        ~Client();
     private:
         std::string m_user;
   };

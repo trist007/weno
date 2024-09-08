@@ -24,10 +24,11 @@ int main()
 #else
   InetAddress serverAddr("127.0.0.1", 8888);
 #endif
-  std::shared_ptr<trantor::TcpClient> client[10];
+  std::shared_ptr<trantor::TcpClient> client[1];
   std::atomic_int connCount;
-  connCount = 10;
-  for (int i = 0; i < 10; ++i)
+  connCount = 1;
+  weno::Client session("trist007");
+  for (int i = 0; i < 1; ++i)
   {
     client[i] = std::make_shared<trantor::TcpClient>(&loop,
       serverAddr,
@@ -56,12 +57,13 @@ int main()
 #endif
       });
     client[i]->setConnectionCallback(
-      [i, &loop, &connCount](const TcpConnectionPtr& conn) {
+      [i, &loop, &connCount, &session](const TcpConnectionPtr& conn) {
         if (conn->connected())
         {
           LOG_DEBUG << i << " connected!";
           std::string tmp = std::to_string(i) + " client!!";
-          conn->send(tmp);
+          std::string user = session.getUser();
+          conn->send(user);
         }
         else
         {
@@ -75,7 +77,7 @@ int main()
       [](const TcpConnectionPtr& conn, MsgBuffer* buf) {
         LOG_DEBUG << std::string(buf->peek(), buf->readableBytes());
         buf->retrieveAll();
-        conn->shutdown();
+        //conn->shutdown();
       });
     client[i]->connect();
   }
