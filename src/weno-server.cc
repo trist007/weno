@@ -48,10 +48,6 @@ int main()
         {
           session.Authenticate(connectionPtr, buffer);  
         }
-        else
-        {
-          std::cout << "user " << session.getUser() << " is authenticated\n" << std::endl;
-        }
       });
 
   server.setConnectionCallback([&session](const TcpConnectionPtr &connPtr)
