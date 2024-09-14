@@ -18,7 +18,6 @@ namespace weno
        * @param user The user name.
        */
         Server();
-        int checkUser(std::string user);
         std::string getUser();
         ~Server();
 
