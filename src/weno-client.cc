@@ -10,7 +10,7 @@
 #include <sys/socket.h>
 #include <netinet/tcp.h>
 #endif
-#include "../include/Weno.h"
+#include "Weno.h"
 
 using namespace trantor;
 #define USE_IPV6 0
@@ -64,6 +64,10 @@ int main()
           std::string tmp = std::to_string(i) + " client!!";
           std::string user = session.getUser();
           conn->send(user);
+          std::string userInput;
+          std::cout << "Enter user input: ";
+          std::getline(std::cin, userInput);
+          conn->send(userInput);
         }
         else
         {
@@ -77,6 +81,11 @@ int main()
       [](const TcpConnectionPtr& conn, MsgBuffer* buf) {
         LOG_DEBUG << std::string(buf->peek(), buf->readableBytes());
         buf->retrieveAll();
+        std::string userInput;
+        std::cout << "Enter user input: ";
+        std::getline(std::cin, userInput);
+        conn->send(userInput);
+
         //conn->shutdown();
       });
     client[i]->connect();

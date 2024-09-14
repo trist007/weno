@@ -1,4 +1,11 @@
+#include <trantor/utils/MsgBuffer.h>
+#include <trantor/net/inner/TcpConnectionImpl.h>
 #include <string>
+#include <memory>
+
+using namespace trantor;
+using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+
 namespace weno
 {
 
@@ -12,9 +19,14 @@ namespace weno
        */
         Server();
         int checkUser(std::string user);
+        std::string getUser();
         ~Server();
+
+        void Authenticate(const TcpConnectionPtr &connectionPtr, trantor::MsgBuffer *buffer);
+        bool isAuthenticated();
     private:
         std::string m_user;
+        bool m_authenticated;
   };
 
   class Client

@@ -1,13 +1,35 @@
 #include <string>
 #include <iostream>
-#include "../include/Weno.h"
+#include "Weno.h"
 
 using namespace weno;
 
 //Server
-Server::Server() : m_user("")
+Server::Server() : m_user(""), m_authenticated(false)
 {
   std::cout << "Default constructor was used\n";
+}
+
+std::string Server::getUser()
+{
+  return m_user;
+}
+
+void Server::Authenticate(const TcpConnectionPtr &connectionPtr, trantor::MsgBuffer *buffer)
+{
+  connectionPtr->send("Please authenticate with a username: ");
+
+  std::cout << "buffer->peek() = " << buffer->peek() << "\n";
+  if (buffer->peek() == std::string("trist007"))
+  {
+    m_authenticated = true;
+    std::cout << "user is authenticated" << std::endl; 
+  }
+}
+
+bool Server::isAuthenticated()
+{
+  return m_authenticated;
 }
 
 int Server::checkUser(std::string user)

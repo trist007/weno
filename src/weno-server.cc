@@ -6,7 +6,8 @@
 #include <trantor/net/EventLoopThread.h>
 #include <trantor/net/EventLoopThreadPool.h>
 #include <trantor/net/InetAddress.h>
-#include "../include/Weno.h"
+
+#include "Weno.h"
 
 using namespace trantor;
 
@@ -36,22 +37,35 @@ int main()
   server.setAfterAcceptSockOptCallback([](int fd)
                                        { std::cout << "afterAcceptSockOptCallback:" << fd << std::endl; });
   server.setRecvMessageCallback(
-      [](const TcpConnectionPtr &connectionPtr, MsgBuffer *buffer)
+      [&session](const TcpConnectionPtr &connectionPtr, MsgBuffer *buffer)
       {
         // LOG_DEBUG<<"recv callback!";
         std::cout << std::string(buffer->peek(), buffer->readableBytes());
         connectionPtr->send(buffer->peek(), buffer->readableBytes());
         buffer->retrieveAll();
         // connectionPtr->forceClose();
+        if (session.isAuthenticated() == false)
+        {
+          session.Authenticate(connectionPtr, buffer);  
+        }
+        else
+        {
+          std::cout << "user " << session.getUser() << " is authenticated\n" << std::endl;
+        }
       });
+
   server.setConnectionCallback([&session](const TcpConnectionPtr &connPtr)
                                {
     if (connPtr->connected()) {
       //LOG_DEBUG << "New connection from " << session.getUser();
       LOG_DEBUG << "New connection";
-    } else if (connPtr->disconnected()) {
+    }
+    else if (connPtr->disconnected())
+    {
       LOG_DEBUG << "connection disconnected";
-    } });
+    }
+
+  });
   server.setIoLoopNum(3);
   server.start();
   loopThread.wait();
