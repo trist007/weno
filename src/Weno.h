@@ -17,11 +17,14 @@ namespace weno
        * 
        * @param user The user name.
        */
-        Server();
-        std::string getUser();
+        explicit Server();
         ~Server();
+        void setUser(std::string);
+        std::string getUser();
+        void startServer();
 
-        void Authenticate(const TcpConnectionPtr &connectionPtr, trantor::MsgBuffer *buffer);
+        //void Authenticate(const TcpConnectionPtr &connectionPtr, trantor::MsgBuffer *buffer);
+        void Authenticate();
         bool isAuthenticated();
     private:
         std::string m_user;
@@ -36,10 +39,12 @@ namespace weno
        * 
        * @param user The user name.
        */
-        Client();
-        Client(const std::string user);
-        std::string getUser();
+        explicit Client();
         ~Client();
+        void startClient();
+        Client(const std::string user);
+        void setUser(std::string);
+        std::string getUser();
     private:
         std::string m_user;
   };
