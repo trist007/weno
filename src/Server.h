@@ -1,3 +1,7 @@
+//
+// Server.h
+//
+
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/net/inner/TcpConnectionImpl.h>
 #include <string>
@@ -22,6 +26,7 @@ namespace weno
         void setUser(std::string);
         std::string getUser();
         void startServer();
+        void userInput();
 
         //void Authenticate(const TcpConnectionPtr &connectionPtr, trantor::MsgBuffer *buffer);
         void Authenticate();
@@ -31,21 +36,4 @@ namespace weno
         bool m_authenticated;
   };
 
-  class Client
-  {
-    public:
-      /**
-       * @brief launch a new Chat.
-       * 
-       * @param user The user name.
-       */
-        explicit Client();
-        ~Client();
-        void startClient();
-        Client(const std::string user);
-        void setUser(std::string);
-        std::string getUser();
-    private:
-        std::string m_user;
-  };
 }

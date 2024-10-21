@@ -1,6 +1,6 @@
 if (COMPILE_EXECUTABLE)
-	add_executable(${EXECUTABLE_NAME}-server weno-server.cc Weno.cc "Weno.h")
-	add_executable(${EXECUTABLE_NAME}-client weno-client.cc Weno.cc "Weno.h")
+    add_executable(${EXECUTABLE_NAME}-server weno-server.cpp Server.cpp "Server.h")
+    add_executable(${EXECUTABLE_NAME}-client weno-client.cpp Client.cpp "Client.h")
 else()
 	message("W/o exe. compiling")
 endif()
