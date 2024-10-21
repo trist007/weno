@@ -13,6 +13,7 @@
 #include <string>
 #include <iostream>
 #include <atomic>
+#include <thread>
 #ifdef _WIN32
 #include <ws2tcpip.h>
 #else
@@ -27,7 +28,7 @@
 using namespace trantor;
 using namespace weno;
 
-Client::Client() : m_user("") {}
+Client::Client() : m_user("anonymous") {}
 
 void Client::setUser(std::string user)
 {
@@ -76,12 +77,13 @@ void Client::startClient()
 #endif
         });
         client[i]->setConnectionCallback(
-            [i, &loop, &connCount](const TcpConnectionPtr &conn) {
+            [i, &loop, &connCount, &this](const TcpConnectionPtr &conn) {
                 if (conn->connected())
                 {
                     LOG_DEBUG << i << " connected!";
                     std::string tmp = std::to_string(i) + " client!!";
                     conn->send(tmp);
+                    this->userInput();
                 }
                 else
                 {
@@ -102,6 +104,60 @@ void Client::startClient()
     loop.loop();
 }
 
+void Client::joinUserInputThread()
+{
+    if (m_userInputThread.joinable())
+    {
+        m_userInputThread.join();
+    }
+}
+
+
+void Client::startUserInput(const TcpConnectionPtr& conn)
+{
+    m_userInputThread = std::thread(&Client::userInput, this, conn);
+}
+
+void Client::userInput(const TcpConnectionPtr& conn)
+{
+    std::string userInput = std::string();
+    while (!m_stopThread)
+    {
+        std::cout << this->m_user << ": ";
+
+        try
+        {
+            if (!std::getline(std::cin, userInput))
+            {
+                std::cerr << "Error reading from input. Exiting...\n";
+                break;
+            }
+        }
+        catch (const std::exception& ex)
+        {
+            std::cerr << "Exception occurred while reading input: " << ex.what() << std::endl;
+            break;
+        }
+
+        if (userInput == "/quit")
+        {
+            break;
+        }
+        else
+        {
+            try
+            {
+                conn->send(userInput);
+            }
+            catch (const std::exception& ex)
+            {
+                std::cerr << "Exception occurred while reading input: " << ex.what() << std::endl;
+                break;
+            }
+        }
+    }
+}
+
 std::string Client::getUser()
 {
   if (m_user.empty())
@@ -116,5 +172,7 @@ std::string Client::getUser()
 
 Client::~Client()
 {
-  std::cout << "Closing chat\n";
+    m_stopThread = true
+    m_userInputThread.join();
+    std::cout << "Closing chat\n";
 }

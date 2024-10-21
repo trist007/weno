@@ -26,7 +26,14 @@ namespace weno
         void startClient();
         Client(const std::string user);
         void setUser(std::string);
+        void joinUserInputThread();
+        void startUserInput(const TcpConnectionPtr& conn);
+        void userInput(const TcpConnectionPtr& conn);
         std::string getUser();
         std::string m_user;
+    private:
+        std::thread m_userInputThread;
+        std::atomic<bool> m_stopThread{false};
+
   };
 }
